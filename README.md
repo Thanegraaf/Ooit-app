@@ -9,6 +9,7 @@ Een web-app voor jullie twee. Eén gedeelde lijst met ervaringen, live bijgewerk
 | De app zelf (`index.html`, `app.css`, `app.js`) | Staat in de repository |
 | Database, beveiliging en foto-opslag (`supabase/schema.sql`) | Klaar om te plakken, getest op PostgreSQL 16 |
 | Online zetten (`.github/workflows/deploy.yml`) | Automatisch bij elke push naar de standaardbranch |
+| GitHub Pages aanzetten | Doet de deploy zelf |
 | Supabase-sleutels invullen | Doet de deploy zelf, uit twee repository secrets |
 | Cache-versie ophogen bij updates | Doet de deploy zelf, op basis van de commit |
 | Supabase wakker houden (`.github/workflows/keepalive.yml`) | Elke dag om 05:17 UTC |
@@ -65,13 +66,11 @@ Gebruik nooit de secret key of de service_role key. De deploy weigert die en sto
 
 Deze twee secrets gebruiken zowel de deploy als de keep-alive. Je hoeft ze dus maar één keer in te vullen.
 
-### 6. Zet GitHub Pages aan
+### 6. Start de deploy
 
-1. Ga naar **Settings > Pages**.
-2. Kies bij **Source** de optie **GitHub Actions**.
-3. Ga naar het tabblad **Actions**, kies **Deploy naar GitHub Pages** en klik op **Run workflow**.
+Ga naar het tabblad **Actions**, kies **Deploy naar GitHub Pages** en klik op **Run workflow**.
 
-Na een minuut staat de app op `https://thanegraaf.github.io/Ooit-app/`.
+De workflow zet GitHub Pages zelf aan, met GitHub Actions als bron. Je hoeft in **Settings > Pages** niets in te stellen. Na een minuut staat de app op `https://thanegraaf.github.io/Ooit-app/`.
 
 Klik daarna ook één keer op **Run workflow** bij **Supabase keepalive**. In de log hoort `HTTP 200` te staan.
 
@@ -107,7 +106,7 @@ GitHub zet geplande taken in een publieke repository uit na 60 dagen zonder acti
 | "Deze lijst is compleet" bij een nieuw account | Er zijn al twee leden. Log in met een van die accounts. |
 | Foto's laden niet | Controleer of stap 3 volledig is uitgevoerd. De bucket `photos` moet bestaan. |
 | De deploy faalt op "Verkeerde sleutel" | In `SUPABASE_ANON_KEY` staat een secret key of service_role key. Vervang hem door de publishable key. |
-| Pages staat niet in Settings | De repository is nog privé. Zie stap 1. |
+| De deploy faalt op "Get Pages site failed" of "Resource not accessible" | De repository is nog privé. Zie stap 1. |
 
 ## Kosten en grenzen
 

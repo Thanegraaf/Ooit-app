@@ -29,7 +29,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Supabase-gegevens invullen
         env:
@@ -57,7 +57,10 @@ jobs:
           sed -i "s|^const VERSION = .*|const VERSION = 'ooit-${GITHUB_SHA:0:7}';|" sw.js
           grep -n "^const VERSION" sw.js
 
+      # Zet GitHub Pages zo nodig zelf aan, met GitHub Actions als bron.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -40,7 +40,7 @@ jobs:
           exit 1
 
       - name: Repository actief houden
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Heartbeat-commit als de laatste commit oud is
         run: |
