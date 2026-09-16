@@ -1,0 +1,57 @@
+# Houdt het gratis Supabase-project wakker.
+# Draait elke dag, schrijft een heartbeat in de database
+# en zorgt dat GitHub deze geplande taak niet uitzet.
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: "17 5 * * *"   # elke dag om 05:17 UTC
+  workflow_dispatch:        # handmatig starten via het tabblad Actions
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Heartbeat naar Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "Secrets SUPABASE_URL en SUPABASE_ANON_KEY ontbreken."
+            exit 1
+          fi
+          headers=(-H "apikey: $SUPABASE_KEY" -H "Content-Type: application/json")
+          case "$SUPABASE_KEY" in
+            sb_publishable_*) ;;
+            *) headers+=(-H "Authorization: Bearer $SUPABASE_KEY") ;;
+          esac
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/out.txt -w "%{http_code}" -X POST \
+              "${SUPABASE_URL%/}/rest/v1/rpc/heartbeat" "${headers[@]}" -d '{}')
+            echo "Poging $i: HTTP $code $(cat /tmp/out.txt)"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 30
+          done
+          echo "Supabase reageert niet. Controleer of het project gepauzeerd is."
+          exit 1
+
+      - name: Repository actief houden
+        uses: actions/checkout@v4
+
+      - name: Heartbeat-commit als de laatste commit oud is
+        run: |
+          last=$(git log -1 --format=%ct)
+          days=$(( ( $(date +%s) - last ) / 86400 ))
+          echo "Laatste commit: $days dagen geleden"
+          if [ "$days" -ge 45 ]; then
+            date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/heartbeat.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/heartbeat.txt
+            git commit -m "chore: heartbeat"
+            git push
+          fi

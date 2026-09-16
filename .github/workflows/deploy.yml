@@ -1,0 +1,67 @@
+# Zet de app online op GitHub Pages.
+# Vult config.js met de Supabase-gegevens uit de repository secrets,
+# zodat je die sleutels op één plek beheert.
+name: Deploy naar GitHub Pages
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore:
+      - '.github/heartbeat.txt'
+      - 'README.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    # Alleen de standaardbranch gaat live.
+    if: github.event_name == 'workflow_dispatch' || github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Supabase-gegevens invullen
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_KEY:-}" ]; then
+            echo "::warning title=Supabase nog niet gekoppeld::Maak de secrets SUPABASE_URL en SUPABASE_ANON_KEY aan onder Settings > Secrets and variables > Actions. De app toont nu het scherm 'Nog even koppelen'."
+            exit 0
+          fi
+          case "$SUPABASE_KEY" in
+            sb_secret_*|*service_role*|eyJ*ic2VydmljZV9yb2xl*)
+              echo "::error title=Verkeerde sleutel::SUPABASE_ANON_KEY lijkt een secret key of service_role key. Die hoort nooit in een app. Gebruik de publishable key (sb_publishable_...) of de legacy anon key."
+              exit 1 ;;
+          esac
+          body=$(jq -cn --arg u "$SUPABASE_URL" --arg k "$SUPABASE_KEY" \
+            '{supabaseUrl: ($u | sub("/+$"; "")), supabaseAnonKey: $k}')
+          printf 'window.OOIT_CONFIG = %s;\n' "$body" > config.js
+          echo "config.js gevuld met de Supabase-gegevens uit de secrets."
+
+      - name: Cache-versie op deze commit zetten
+        run: |
+          set -euo pipefail
+          sed -i "s|^const VERSION = .*|const VERSION = 'ooit-${GITHUB_SHA:0:7}';|" sw.js
+          grep -n "^const VERSION" sw.js
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
