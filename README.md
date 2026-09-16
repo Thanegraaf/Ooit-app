@@ -9,7 +9,7 @@ Een web-app voor jullie twee. Eén gedeelde lijst met ervaringen, live bijgewerk
 | De app zelf (`index.html`, `app.css`, `app.js`) | Staat in de repository |
 | Database, beveiliging en foto-opslag (`supabase/schema.sql`) | Klaar om te plakken, getest op PostgreSQL 16 |
 | Online zetten (`.github/workflows/deploy.yml`) | Automatisch bij elke push naar de standaardbranch |
-| GitHub Pages aanzetten | Doet de deploy zelf |
+| GitHub Pages aanzetten | Probeert de deploy zelf, anders één klik in Settings |
 | Supabase-sleutels invullen | Doet de deploy zelf, uit twee repository secrets |
 | Cache-versie ophogen bij updates | Doet de deploy zelf, op basis van de commit |
 | Supabase wakker houden (`.github/workflows/keepalive.yml`) | Elke dag om 05:17 UTC |
@@ -70,7 +70,9 @@ Deze twee secrets gebruiken zowel de deploy als de keep-alive. Je hoeft ze dus m
 
 Ga naar het tabblad **Actions**, kies **Deploy naar GitHub Pages** en klik op **Run workflow**.
 
-De workflow zet GitHub Pages zelf aan, met GitHub Actions als bron. Je hoeft in **Settings > Pages** niets in te stellen. Na een minuut staat de app op `https://thanegraaf.github.io/Ooit-app/`.
+De workflow probeert GitHub Pages zelf aan te zetten, met GitHub Actions als bron. Lukt dat niet, dan zie je in de log `Create Pages site failed`. Ga in dat geval naar **Settings > Pages** en kies bij **Source** de optie **GitHub Actions**. Start de workflow daarna opnieuw.
+
+Na een minuut staat de app op `https://thanegraaf.github.io/Ooit-app/`.
 
 Klik daarna ook één keer op **Run workflow** bij **Supabase keepalive**. In de log hoort `HTTP 200` te staan.
 
@@ -106,7 +108,7 @@ GitHub zet geplande taken in een publieke repository uit na 60 dagen zonder acti
 | "Deze lijst is compleet" bij een nieuw account | Er zijn al twee leden. Log in met een van die accounts. |
 | Foto's laden niet | Controleer of stap 3 volledig is uitgevoerd. De bucket `photos` moet bestaan. |
 | De deploy faalt op "Verkeerde sleutel" | In `SUPABASE_ANON_KEY` staat een secret key of service_role key. Vervang hem door de publishable key. |
-| De deploy faalt op "Get Pages site failed" of "Resource not accessible" | De repository is nog privé. Zie stap 1. |
+| De deploy faalt op "Create Pages site failed" | De repository is nog privé, of GitHub laat de workflow Pages niet zelf aanzetten. Doe stap 1 en zet daarna in **Settings > Pages** de bron op **GitHub Actions**. |
 
 ## Kosten en grenzen
 
