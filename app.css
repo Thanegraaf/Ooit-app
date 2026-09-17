@@ -277,22 +277,6 @@ svg{display:block}
 .reveal-actions.show{opacity:1;transform:none}
 .draw .btn.soft{background:rgba(255,255,255,.12);color:#fff}
 
-/* Receipt */
-.receipt-wrap{padding:26px 22px 10px}
-.paper{background:#FCFBF8;color:#1F2128;border-radius:6px 6px 0 0;padding:26px 22px 30px;position:relative;box-shadow:0 12px 30px rgba(0,0,0,.08);animation:print .9s var(--ease) both;font-variant-numeric:tabular-nums}
-.paper::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:10px;background:linear-gradient(135deg,#FCFBF8 50%,transparent 50%) 0 0/14px 10px,linear-gradient(225deg,#FCFBF8 50%,transparent 50%) 0 0/14px 10px}
-@keyframes print{from{clip-path:inset(0 0 100% 0);transform:translateY(-20px)}to{clip-path:inset(0 0 -20px 0);transform:none}}
-.paper .brand{text-align:center;font-family:var(--display);font-size:34px;line-height:1}
-.paper .meta{text-align:center;font-size:12px;color:#6B6F79;margin:8px 0 18px;line-height:1.5}
-.paper hr{border:0;border-top:1.5px dashed #C9CBD0;margin:14px 0}
-.line-item{display:flex;justify-content:space-between;gap:12px;font-size:14px;line-height:1.35;padding:5px 0}
-.line-item span:last-child{color:#6B6F79;white-space:nowrap;text-align:right}
-.line-item.lived span:first-child{text-decoration:line-through;text-decoration-color:rgba(31,33,40,.4)}
-.total{display:flex;justify-content:space-between;font-weight:700;font-size:16px;padding:4px 0}
-.paper .thanks{text-align:center;font-size:13px;color:#6B6F79;margin-top:18px;line-height:1.5}
-.barcode{display:flex;justify-content:center;gap:2px;height:44px;margin:18px auto 0}
-.barcode i{display:block;background:#1F2128}
-
 @media (hover:none){.pick:hover{transform:none}}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}

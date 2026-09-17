@@ -446,7 +446,7 @@ async function afterLogin(){
 /* ---------- Elementen ---------- */
 const app = $('#app'), browse = $('#browse'), mylist = $('#mylist');
 const content = $('#browseContent'), listContent = $('#listContent');
-const sheet = $('#sheet'), receipt = $('#receipt'), draw = $('#draw'), backdrop = $('#backdrop');
+const sheet = $('#sheet'), draw = $('#draw'), backdrop = $('#backdrop');
 const pickerEl = $('#picker'), gateEl = $('#who'), matchEl = $('#match');
 const memoryEl = $('#memory'), editorEl = $('#editor'), lightbox = $('#lightbox');
 let cat = 'all', query = '', listView = 'todo', listFor = 'all', listEdit = false, lastFocus = null;
@@ -532,7 +532,7 @@ function waitingIds(){
 }
 function waitingShelf(){
   const ids = waitingIds(); if(!ids.length) return '';
-  return `<div id="waitShelf">${shelf(`${esc(nm(other(S.me)))} wil dit met jou`, 'Tik op een ervaring en kies Ik ook voor een match.', ids.map(getItem))}</div>`;
+  return `<div id="waitShelf">${shelf(`${esc(nm(other(S.me)))} wil dit met jou`, 'Tik op een ervaring om goed te keuren of te weigeren.', ids.map(getItem))}</div>`;
 }
 
 /* ---------- Onze lijst ---------- */
@@ -549,7 +549,7 @@ function statusText(e){
   if(w.a && w.b) return 'Samen, match';
   const waitingOn = w.a ? 'b' : (w.b ? 'a' : null);
   if(!waitingOn) return 'Samen';
-  return waitingOn===S.me ? `Samen, ${nm(other(S.me))} wacht op jou` : `Samen, wacht op ${nm(waitingOn)}`;
+  return waitingOn===S.me ? `Wacht op jouw goedkeuring` : `Wacht op goedkeuring van ${nm(waitingOn)}`;
 }
 function rowAv(e){
   if(e.for==='both') return pairAv('sm', e.wants||{});
@@ -561,7 +561,7 @@ function rowHtml({id,e,item}, i){
   const action = listEdit
     ? `<span class="row-btns"><button class="row-edit" data-edit="${id}" aria-label="Tekst aanpassen: ${esc(item.title)}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button><button class="del" data-remove="${id}" aria-label="Verwijder ${esc(item.title)}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 7V4.5h4V7M6.5 7l1 13h9l1-13"/></svg>Verwijder</button></span>`
     : needMe
-    ? `<button class="btn gold small iktoo" data-want="${id}">Ik ook</button>`
+    ? `<span class="row-btns"><button class="btn gold small iktoo" data-want="${id}">Ik ook</button><button class="btn soft small" data-remove="${id}">Nee</button></span>`
     : `<button class="check" data-lived="${id}" aria-pressed="${!!e.lived}" aria-label="${e.lived?'Markeer als nog niet beleefd':'Markeer als beleefd'}: ${esc(item.title)}">${I.check.replace('class="i-check" ','')}</button>`;
   return `<li class="row ${e.lived?'done':''} ${listEdit?'editing':''}" style="animation-delay:${Math.min(i,8)*35}ms">
     <button class="row-main" data-open="${id}">
@@ -587,7 +587,7 @@ function renderList(){
     h += ownForm();
     listContent.innerHTML = h; return;
   }
-  const both = all.filter(x=>x.e.for==='both').length;
+  const both = all.filter(x=>x.e.for==='both' && (x.e.wants||{}).a && (x.e.wants||{}).b).length;
   h += `<p>${all.length} ${all.length===1?'ervaring':'ervaringen'}, waarvan ${both} samen. ${lived.length} beleefd.</p><button class="editbtn" data-action="editlist" aria-pressed="${listEdit}">${listEdit?'Klaar':'Wijzig'}</button></div>`;
   h += banner;
   h += `<div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Deel van jullie lijst dat beleefd is"><i style="width:${pct}%"></i></div>`;
@@ -602,16 +602,13 @@ function renderList(){
     const waitIds = new Set(waitingIds());
     const wait = todo.filter(x=>waitIds.has(x.id));
     const rest = todo.filter(x=>!waitIds.has(x.id));
-    if(wait.length) h += `<div class="group-head"><h2>Wacht op jou</h2><span class="count">${wait.length}</span></div><ul class="rows">${wait.map(rowHtml).join('')}</ul>`;
+    if(wait.length) h += `<div class="group-head"><h2>Wacht op jouw goedkeuring</h2><span class="count">${wait.length}</span></div><ul class="rows">${wait.map(rowHtml).join('')}</ul>`;
     if(rest.length) h += `${wait.length?'<div class="group-head"><h2>Op de lijst</h2></div>':''}<ul class="rows">${rest.map(rowHtml).join('')}</ul>`;
     if(!todo.length) h += `<div class="empty"><h3>Alles beleefd</h3><p>Alles in deze selectie is gedaan. Tijd voor iets nieuws.</p><button class="btn soft" data-action="draw">Verras ons</button></div>`;
   } else {
     h += done.length ? `<ul class="rows">${done.map(rowHtml).join('')}</ul>` : `<div class="empty"><h3>Nog niets beleefd</h3><p>Tik op het rondje naast een ervaring zodra jullie het gedaan hebben.</p></div>`;
   }
   h += ownForm();
-  h += `<div class="list-actions">
-    <button class="btn soft block" data-action="receipt">Bekijk jullie lijst als kassabon</button>
-  </div>`;
   listContent.innerHTML = h;
   hydrate();
 }
@@ -743,7 +740,7 @@ function toast(msg, undo){
 }
 
 /* ---------- Lagen ---------- */
-const SHEETS = [sheet, receipt, pickerEl, gateEl, memoryEl, editorEl];
+const SHEETS = [sheet, pickerEl, gateEl, memoryEl, editorEl];
 function openLayer(el){
   if(!el.classList.contains('show')) lastFocus = document.activeElement;
   el.hidden = false;
@@ -815,7 +812,7 @@ function renderSheetState(id, stampIn){
   let wantsLine = '';
   if(e.for==='both'){
     const txt = (w.a && w.b) ? 'Jullie willen dit allebei.'
-      : (w[S.me] ? `Jij wilt dit. Wacht op ${esc(nm(other(S.me)))}.` : (w[other(S.me)] ? `${esc(nm(other(S.me)))} wil dit. Jij ook?` : 'Nog niemand heeft aangegeven dit te willen.'));
+      : (w[S.me] ? `Jij wilt dit. Wacht op goedkeuring van ${esc(nm(other(S.me)))}.` : (w[other(S.me)] ? `${esc(nm(other(S.me)))} wil dit samen met jou doen. Keur je het goed?` : 'Nog niemand heeft aangegeven dit te willen.'));
     wantsLine = `<div class="wants">${pairAv('', w)}<span>${txt}</span></div>`;
   } else {
     wantsLine = `<div class="wants"><span class="avs">${av(e.for)}</span><span>Een doel voor ${esc(nm(e.for))}${e.for===S.me?'':`, jij bent de supporter`}.</span></div>`;
@@ -830,9 +827,9 @@ function renderSheetState(id, stampIn){
     slot.innerHTML = `<div class="stamp ${stampIn?'in':''}"><div><span>Beleefd</span><small>${d.toLocaleDateString('nl-NL',{month:'short',year:'numeric'})}</small></div></div>`;
   } else {
     const needMine = e.for==='both' && S.me && !w[S.me];
-    cta.innerHTML = `<button class="btn soft" data-remove="${id}">Verwijderen</button>` + (needMine
-      ? `<button class="btn gold" data-want="${id}">Ik ook</button>`
-      : `<button class="btn gold" data-lived="${id}">Markeer als beleefd</button>`);
+    cta.innerHTML = needMine
+      ? `<button class="btn soft" data-remove="${id}">Nee, liever niet</button><button class="btn gold" data-want="${id}">Ik ook</button>`
+      : `<button class="btn soft" data-remove="${id}">Verwijderen</button><button class="btn gold" data-lived="${id}">Markeer als beleefd</button>`;
     slot.innerHTML = '';
   }
 }
@@ -1211,37 +1208,6 @@ function pickCard(btn){
   }, 380);
 }
 
-/* ---------- Kassabon ---------- */
-function openReceipt(){
-  const all = listItems().slice().reverse();
-  const now = new Date();
-  const days = all.reduce((s,x)=>s+(x.item.days||1),0);
-  const count = k => all.filter(x=>x.e.for===k).length;
-  const lived = all.filter(x=>x.e.lived).length;
-  const order = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(all.length).padStart(3,'0')}`;
-  const r = rng(hash(order));
-  let bars=''; for(let i=0;i<46;i++) bars += `<i style="width:${1+Math.floor(r()*3)}px"></i>`;
-  const tag = f => f==='both' ? 'samen' : initial(f);
-  receipt.innerHTML = `<div class="grabber"></div>
-    <div class="sheet-top"><button class="icon-btn" data-action="closereceipt" aria-label="Sluiten">${I.close}</button></div>
-    <div class="sheet-scroll"><div class="receipt-wrap"><div class="paper">
-      <div class="brand">Ooit</div>
-      <div class="meta">Bon voor ${esc(nm('a'))} en ${esc(nm('b'))}<br>Bestelling ${order}<br>${now.toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}</div>
-      <hr>
-      ${all.length ? all.map(x=>`<div class="line-item ${x.e.lived?'lived':''}"><span>${esc(x.item.title)}</span><span>${esc(tag(x.e.for))}</span></div>`).join('') : '<div class="line-item"><span>Nog niets besteld</span><span>0</span></div>'}
-      <hr>
-      <div class="line-item"><span>Samen</span><span>${count('both')}</span></div>
-      <div class="line-item"><span>Voor ${esc(nm('a'))}</span><span>${count('a')}</span></div>
-      <div class="line-item"><span>Voor ${esc(nm('b'))}</span><span>${count('b')}</span></div>
-      <div class="line-item"><span>Al beleefd</span><span>${lived}</span></div>
-      <div class="total"><span>Dagen beleven</span><span>ongeveer ${days}</span></div>
-      <div class="line-item"><span>Betaald met</span><span>Nieuwsgierigheid</span></div>
-      <div class="barcode" aria-hidden="true">${bars}</div>
-      <div class="thanks">Niet ruilbaar. Geldig zolang jullie samen zijn.<br>Bewaar deze bon goed.</div>
-    </div></div></div>`;
-  openLayer(receipt);
-}
-
 /* ---------- Eigen idee ---------- */
 const OWN_MOTIFS = ['sun','waves','peaks','bloom','road','circles','moon','stack'];
 function addOwn(title){
@@ -1329,8 +1295,6 @@ app.addEventListener('click', ev=>{
     else if(a==='redraw') openDraw();
     else if(a==='closedraw') closeLayer(draw);
     else if(a==='close') closeLayer(sheet);
-    else if(a==='receipt') openReceipt();
-    else if(a==='closereceipt') closeLayer(receipt);
     else if(a==='closepicker'){ pickCtx=null; closeLayer(pickerEl); }
     else if(a==='closegate'){ if(!gateForced) closeLayer(gateEl); }
     else if(a==='login') doAuth(false, el);
@@ -1361,7 +1325,6 @@ backdrop.addEventListener('click', ()=>{
   if(editorEl.classList.contains('show')){ closeLayer(editorEl); return; }
   if(memoryEl.classList.contains('show')){ closeLayer(memoryEl); return; }
   if(pickerEl.classList.contains('show')){ pickCtx=null; closeLayer(pickerEl); return; }
-  if(receipt.classList.contains('show')) closeLayer(receipt);
   if(sheet.classList.contains('show')) closeLayer(sheet);
 });
 document.addEventListener('keydown', ev=>{
@@ -1373,7 +1336,6 @@ document.addEventListener('keydown', ev=>{
     else if(gateEl.classList.contains('show')){ if(!gateForced) closeLayer(gateEl); }
     else if(pickerEl.classList.contains('show')){ pickCtx=null; closeLayer(pickerEl); }
     else if(draw.classList.contains('show')) closeLayer(draw);
-    else if(receipt.classList.contains('show')) closeLayer(receipt);
     else if(sheet.classList.contains('show')) closeLayer(sheet);
   }
   if(ev.key==='Enter' && ev.target && ev.target.id==='ownInput'){ ev.preventDefault(); addOwn(ev.target.value); }
@@ -1387,7 +1349,7 @@ $('#q').addEventListener('input', ev=>{ clearTimeout(qTimer); qTimer=setTimeout(
   const nav=$(sel);
   scr.addEventListener('scroll', ()=>nav.classList.toggle('scrolled', scr.scrollTop>56), {passive:true});
 });
-[sheet, receipt, pickerEl, memoryEl, editorEl].forEach(el=>{
+[sheet, pickerEl, memoryEl, editorEl].forEach(el=>{
   let startY=null, dy=0;
   el.addEventListener('touchstart', e=>{
     const sc = el.querySelector('.sheet-scroll');
