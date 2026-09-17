@@ -36,10 +36,10 @@ const PAL_KEYS = Object.keys(P);
 
 /* ---------- Categorieën ---------- */
 const CATS = [
-  {id:'weg', name:'Samen weg', short:'Weg', color:'#4E7FC4', blurb:'Reizen die je samen blijft navertellen.', art:['train','dusk']},
+  {id:'weg', name:'Weg', short:'Weg', color:'#4E7FC4', blurb:'Reizen die je nog lang navertelt.', art:['train','dusk']},
   {id:'buiten', name:'Buiten', short:'Buiten', color:'#2F9C74', blurb:'Momenten die de natuur jullie cadeau geeft.', art:['aurora','aurora']},
-  {id:'tafel', name:'Aan tafel', short:'Aan tafel', color:'#D2803A', blurb:'Eten en drinken om samen voor op pad te gaan.', art:['rings','citrus']},
-  {id:'maken', name:'Samen maken', short:'Maken', color:'#8A63C9', blurb:'Dingen die jullie met eigen handen afmaken.', art:['bowl','clay']},
+  {id:'tafel', name:'Aan tafel', short:'Aan tafel', color:'#D2803A', blurb:'Eten en drinken om mee op pad te gaan.', art:['rings','citrus']},
+  {id:'maken', name:'Maken', short:'Maken', color:'#8A63C9', blurb:'Dingen die je met eigen handen afmaakt.', art:['bowl','clay']},
   {id:'durven', name:'Durven', short:'Durven', color:'#D2553F', blurb:'Spannende dingen, makkelijker met z\u2019n tweeën.', art:['parachute','coast']},
   {id:'elkaar', name:'Voor elkaar', short:'Voor elkaar', color:'#C75A86', blurb:'Doelen voor één van jullie, met de ander als grootste supporter.', art:['circles','rose']},
   {id:'eigen', name:'Eigen idee', short:'Eigen idee', color:'#E3A33A', blurb:'Ideeën die jullie zelf toevoegden.', art:['sun','dawn']}
@@ -49,48 +49,48 @@ const CAT = Object.fromEntries(CATS.map(c=>[c.id,c]));
 /* ---------- Ervaringen ---------- */
 const X = (id,cat,title,where,time,days,season,blurb,motif,pal,extra) => Object.assign({id,cat,title,where,time,days,season,blurb,motif,pal},extra||{});
 const DATA = [
-  X('night-train','weg','Samen wakker worden in een ander land','European Sleeper vanuit Amsterdam','Eén nacht',1,'Hele jaar','Stap ’s avonds in de nachttrein, deel een coupé en word wakker in een andere stad.','train','dusk',{near:true}),
-  X('glacier-express','weg','Samen in de Glacier Express','Zermatt naar St. Moritz, Zwitserland','8 uur',1,'Hele jaar','Acht trage uren over 291 bruggen en door 91 tunnels, met ramen die doorlopen tot in het dak.','train','alpine'),
-  X('cappadocia','weg','Samen zweven boven Cappadocië','Göreme, Turkije','Ongeveer 1 uur in de lucht',1,'April tot oktober','Stijg op in het blauwe licht voor zonsopgang, samen met honderd andere ballonnen boven de rotspilaren.','balloon','sunrise'),
+  X('night-train','weg','Wakker worden in een ander land','European Sleeper vanuit Amsterdam','Eén nacht',1,'Hele jaar','Stap ’s avonds in de nachttrein, deel een coupé en word wakker in een andere stad.','train','dusk',{near:true}),
+  X('glacier-express','weg','Een dag in de Glacier Express','Zermatt naar St. Moritz, Zwitserland','8 uur',1,'Hele jaar','Acht trage uren over 291 bruggen en door 91 tunnels, met ramen die doorlopen tot in het dak.','train','alpine'),
+  X('cappadocia','weg','Zweven boven Cappadocië','Göreme, Turkije','Ongeveer 1 uur in de lucht',1,'April tot oktober','Stijg op in het blauwe licht voor zonsopgang, samen met honderd andere ballonnen boven de rotspilaren.','balloon','sunrise'),
   X('ryokan','weg','Een nacht in een Japans onsendorp','Kinosaki Onsen, Japan','Eén nacht',1,'November tot maart','Loop in een katoenen yukata langs zeven openbare badhuizen en eet daarna een lang kaiseki-diner.','arch','plum'),
   X('lofoten','weg','Een week in een vissershuisje op Lofoten','Reine, Noorwegen','4 tot 5 dagen',5,'Juni tot augustus','Rode huisjes op palen, bergen die recht uit zee omhoog komen en stokvis op houten rekken langs de haven.','peaks','coast'),
-  X('road-trip','weg','Een roadtrip zonder vaste planning','Schotse Hooglanden','Eén week',7,'Mei tot september','Huur een auto, boek alleen de eerste nacht en beslis elke ochtend samen waar je heen rijdt.','road','sky'),
+  X('road-trip','weg','Een roadtrip zonder vaste planning','Schotse Hooglanden','Eén week',7,'Mei tot september','Huur een auto, boek alleen de eerste nacht en beslis elke ochtend waar je heen rijdt.','road','sky'),
   X('petra','weg','Petra bij kaarslicht zien','Wadi Musa, Jordanië','Eén avond',1,'Hele jaar','Loop zwijgend door de smalle Siq langs een pad van kaarsen, tot de Schatkamer opdoemt in het licht van honderden kaarsen.','arch','clay',{rare:true}),
 
-  X('eclipse','buiten','Samen een totale zonsverduistering zien','Zuid-Spanje of Luxor, Egypte','Een paar minuten',3,'2 augustus 2027','De volgende grote trekt over Zuid-Spanje, Noord-Afrika en het Midden-Oosten. In Luxor duurt de totaliteit ruim zes minuten.','eclipse','eclipse',{rare:true,featured:true}),
-  X('aurora','buiten','Samen het noorderlicht zien','Tromsø, Noorwegen','3 tot 4 nachten',4,'September tot maart','Rijd op een heldere avond de stad uit, weg van de lampen, en wacht onder één deken. Boek meerdere nachten, dan krijgt het weer meer kansen.','aurora','aurora'),
+  X('eclipse','buiten','Een totale zonsverduistering zien','Zuid-Spanje of Luxor, Egypte','Een paar minuten',3,'2 augustus 2027','De volgende grote trekt over Zuid-Spanje, Noord-Afrika en het Midden-Oosten. In Luxor duurt de totaliteit ruim zes minuten.','eclipse','eclipse',{rare:true,featured:true}),
+  X('aurora','buiten','Het noorderlicht zien','Tromsø, Noorwegen','3 tot 4 nachten',4,'September tot maart','Rijd op een heldere avond de stad uit, weg van de lampen, en wacht onder één deken. Boek meerdere nachten, dan krijgt het weer meer kansen.','aurora','aurora'),
   X('dark-sky','buiten','Onder een echt donkere hemel liggen','Dark Sky Park Lauwersmeer','Eén nacht',1,'Oktober tot maart','Neem een deken en thee mee, ga op een maanloze avond op de dijk liggen en geef je ogen twintig minuten. De Melkweg verschijnt vanzelf.','moon','ink',{near:true}),
-  X('wadlopen','buiten','Samen wadlopen naar Schiermonnikoog','Vanaf de Groningse kust','Ongeveer 4 uur',1,'Mei tot september','Loop met een gids door slik en geulen naar het eiland en neem daarna de boot terug. Modder tot je knieën hoort erbij.','waves','slate',{near:true}),
+  X('wadlopen','buiten','Wadlopen naar Schiermonnikoog','Vanaf de Groningse kust','Ongeveer 4 uur',1,'Mei tot september','Loop met een gids door slik en geulen naar het eiland en neem daarna de boot terug. Modder tot je knieën hoort erbij.','waves','slate',{near:true}),
   X('paalkamperen','buiten','Een nacht paalkamperen','Een paalkampeerplek in Nederland','Eén nacht',1,'Mei tot september','Zet jullie tent op bij een paal in het bos, zonder voorzieningen. Neem alles mee en laat niets achter.','moon','deep',{near:true}),
-  X('bio-bay','buiten','Samen door lichtgevend water peddelen','Mosquito Bay, Vieques, Puerto Rico','Eén avond',1,'Rond nieuwe maan','Minuscuul plankton licht op bij elke peddelslag van jullie kajak. Het is een van de helderste lichtgevende baaien ter wereld.','waves','nightsea'),
+  X('bio-bay','buiten','Door lichtgevend water peddelen','Mosquito Bay, Vieques, Puerto Rico','Eén avond',1,'Rond nieuwe maan','Minuscuul plankton licht op bij elke peddelslag van jullie kajak. Het is een van de helderste lichtgevende baaien ter wereld.','waves','nightsea'),
   X('sakura','buiten','Kersenbloesem zien vallen in Kyoto','Filosofenpad, Kyoto','2 tot 3 dagen',3,'Eind maart tot begin april','Loop het pad langs het kanaal vroeg in de ochtend, voor de drukte, terwijl de blaadjes op het water vallen.','bloom','blossom'),
   X('migration','buiten','Op safari tijdens de Grote Migratie','Masai Mara, Kenia','4 tot 5 dagen',5,'Juli tot oktober','Gnoes verzamelen zich urenlang op de oever en steken dan ineens massaal de rivier over. Geduld is de hele reis.','dune','savanna',{rare:true}),
 
-  X('sunrise-picnic','tafel','Een ontbijtpicknick bij zonsopgang','De duinen bij jullie in de buurt','Eén ochtend',1,'Juni','Zet de wekker vroeg, neem koffie in een thermoskan mee en kijk samen hoe de zon opkomt.','sun','dawn',{near:true}),
+  X('sunrise-picnic','tafel','Een ontbijtpicknick bij zonsopgang','De duinen bij jullie in de buurt','Eén ochtend',1,'Juni','Zet de wekker vroeg, neem koffie in een thermoskan mee en kijk hoe de zon opkomt.','sun','dawn',{near:true}),
   X('omakase','tafel','Aan een omakase-bar zitten','Tokio, Japan','Eén avond',1,'Hele jaar','Zo’n twintig stukjes, één voor één uit de handen van de chef. Eet elk stukje meteen.','rings','ink'),
-  X('vendange','tafel','Samen druiven plukken tijdens de oogst','Bourgogne, Frankrijk','Eén week',7,'September','Veel domeinen zoeken extra handen voor de vendange. Het werk is zwaar, de lunch aan de lange tafel maakt het goed.','grapes','plum'),
-  X('pasta','tafel','Samen verse pasta leren maken','Bologna, Italië','Eén middag',1,'Hele jaar','Rol het deeg met een lange houten stok tot je de nerf van de plank erdoorheen ziet.','stack','citrus'),
-  X('night-market','tafel','Samen een nachtmarkt afstruinen','Raohe Street, Taipei','Eén avond',1,'Oktober tot april','Begin bij de peperbroodjes bij de tempelpoort en loop door tot er niets meer in past.','rings','rose'),
+  X('vendange','tafel','Druiven plukken tijdens de oogst','Bourgogne, Frankrijk','Eén week',7,'September','Veel domeinen zoeken extra handen voor de vendange. Het werk is zwaar, de lunch aan de lange tafel maakt het goed.','grapes','plum'),
+  X('pasta','tafel','Verse pasta leren maken','Bologna, Italië','Eén middag',1,'Hele jaar','Rol het deeg met een lange houten stok tot je de nerf van de plank erdoorheen ziet.','stack','citrus'),
+  X('night-market','tafel','Een nachtmarkt afstruinen','Raohe Street, Taipei','Eén avond',1,'Oktober tot april','Begin bij de peperbroodjes bij de tempelpoort en loop door tot er niets meer in past.','rings','rose'),
   X('open-fire','tafel','Een hele maaltijd boven open vuur koken','Jullie tuin of een camping','Eén dag',1,'Nazomer','Steek het vuur ’s middags aan. Tegen de avond zijn de kolen klaar voor flatbread, groenten en een stuk vis.','ember','ember'),
   X('vertical','tafel','Eén wijn proeven over tien jaargangen','Een wijnhuis of goede wijnbar','Eén avond',1,'Hele jaar','Een verticale proeverij laat zien hoe dezelfde wijngaard verandert met het weer van elk jaar.','stripes','wine'),
-  X('star-dinner','tafel','Samen eten bij een sterrenrestaurant','Een plek die jullie allebei kiezen','Eén avond',1,'Hele jaar','Spaar ervoor, kies het menu met wijnarrangement en neem de hele avond de tijd.','rings','matcha'),
+  X('star-dinner','tafel','Eten bij een sterrenrestaurant','Een plek die jullie allebei kiezen','Eén avond',1,'Hele jaar','Spaar ervoor, kies het menu met wijnarrangement en neem de hele avond de tijd.','rings','matcha'),
 
-  X('pottery','maken','Samen een pottenbakcursus volgen','Een keramiekatelier in de buurt','Zes lessen',6,'Hele jaar','Draai elk een kom en gebruik ze daarna allebei elke dag. Scheef is prima.','bowl','clay'),
+  X('pottery','maken','Een pottenbakcursus volgen','Een keramiekatelier in de buurt','Zes lessen',6,'Hele jaar','Draai elk een kom en gebruik ze daarna allebei elke dag. Scheef is prima.','bowl','clay'),
   X('letter','maken','Elkaar een brief schrijven voor over tien jaar','Jullie keukentafel','Eén avond',1,'Wanneer je wilt','Schrijf los van elkaar, sluit de enveloppen en zet de datum erop waarop ze open mogen.','envelope','dawn'),
-  X('tree','maken','Samen een boom planten','Een plek die voor jullie telt','Eén middag',1,'November tot maart','Plant een inheemse boom in de rustperiode. Noteer de datum en de plek, zodat je elk jaar samen kunt kijken hoe hij groeit.','tree','matcha'),
-  X('photobook','maken','Een fotoboek maken van één jaar samen','Thuis','Een paar avonden',2,'December','Kies samen de foto’s van één jaar en schrijf bij elke maand één zin.','frames','darkroom'),
-  X('dance','maken','Samen een danscursus volgen','Een dansschool in de buurt','Tien lessen',5,'Hele jaar','Kies salsa, tango of stijldansen. De eerste les voelt ongemakkelijk, vanaf de vierde wordt het leuk.','spotlight','stage'),
-  X('moestuin','maken','Samen een moestuin beginnen','Jullie tuin of een volkstuin','Eén seizoen',5,'Maart tot oktober','Begin klein met sla, radijs en tomaten. Eet in augustus jullie eerste salade uit eigen grond.','bloom','field',{near:true}),
-  X('song','maken','Samen een liedje leren spelen','Jullie woonkamer','Ongeveer drie maanden',5,'Wanneer je wilt','Kies één nummer dat jullie allebei mooi vinden. Oefen een kwartier per dag en speel het voor vrienden als jullie er klaar voor zijn.','strings','dusk'),
-  X('furniture','maken','Samen een meubel bouwen dat blijft','Een houtbewerkingscursus','Eén week',5,'Hele jaar','Bouw samen een bank of tafel met handgereedschap. Hij gaat langer mee dan alles uit een bouwpakket.','stack','field'),
+  X('tree','maken','Een boom planten','Een plek die voor jullie telt','Eén middag',1,'November tot maart','Plant een inheemse boom in de rustperiode. Noteer de datum en de plek, zodat je elk jaar kunt kijken hoe hij groeit.','tree','matcha'),
+  X('photobook','maken','Een fotoboek maken van het afgelopen jaar','Thuis','Een paar avonden',2,'December','Kies de foto’s van één jaar en schrijf bij elke maand één zin.','frames','darkroom'),
+  X('dance','maken','Een danscursus volgen','Een dansschool in de buurt','Tien lessen',5,'Hele jaar','Kies salsa, tango of stijldansen. De eerste les voelt ongemakkelijk, vanaf de vierde wordt het leuk.','spotlight','stage'),
+  X('moestuin','maken','Een moestuin beginnen','Jullie tuin of een volkstuin','Eén seizoen',5,'Maart tot oktober','Begin klein met sla, radijs en tomaten. Eet in augustus jullie eerste salade uit eigen grond.','bloom','field',{near:true}),
+  X('song','maken','Een liedje leren spelen','Jullie woonkamer','Ongeveer drie maanden',5,'Wanneer je wilt','Kies één nummer dat jullie allebei mooi vinden. Oefen een kwartier per dag en speel het voor vrienden als jullie er klaar voor zijn.','strings','dusk'),
+  X('furniture','maken','Een meubel bouwen dat blijft','Een houtbewerkingscursus','Eén week',5,'Hele jaar','Bouw een bank of tafel met handgereedschap. Hij gaat langer mee dan alles uit een bouwpakket.','stack','field'),
 
-  X('skydive','durven','Samen een tandemsprong maken','Texel','Minder dan een minuut vrije val',1,'Mei tot september','Spring vanaf ongeveer drie kilometer hoogte en zie het hele eiland en de Waddenzee voordat de parachute opengaat.','parachute','coast',{near:true}),
-  X('nieuwjaarsduik','durven','Samen de Nieuwjaarsduik doen','Scheveningen','Ongeveer twee minuten',1,'1 januari','Ren hand in hand de zee in, samen met duizenden mensen met oranje mutsen. Op het strand wacht warme soep.','waves','slate',{near:true}),
-  X('surf','durven','Samen leren surfen','Ericeira, Portugal','Eén week',7,'Mei tot oktober','Boek een surfkamp voor beginners. Op dag vier staan jullie allebei, heel even, op een golf.','waves','lagoon'),
-  X('elfsteden','durven','Samen de Elfstedentocht fietsen','Friesland','Ongeveer 235 km op één dag',1,'Pinkstermaandag','Fiets langs alle elf Friese steden op één dag, met stempelposten onderweg en publiek in de dorpen.','road','sky',{near:true}),
-  X('camino','durven','Samen de laatste 100 km van de Camino lopen','Sarria naar Santiago de Compostela, Spanje','5 tot 6 dagen',6,'Mei, juni of september','Honderd kilometer te voet is het minimum voor de Compostela. Verzamel twee stempels per dag en kom samen aan bij de kathedraal.','road','field'),
+  X('skydive','durven','Een tandemsprong maken','Texel','Minder dan een minuut vrije val',1,'Mei tot september','Spring vanaf ongeveer drie kilometer hoogte en zie het hele eiland en de Waddenzee voordat de parachute opengaat.','parachute','coast',{near:true}),
+  X('nieuwjaarsduik','durven','De Nieuwjaarsduik doen','Scheveningen','Ongeveer twee minuten',1,'1 januari','Ren hand in hand de zee in, samen met duizenden mensen met oranje mutsen. Op het strand wacht warme soep.','waves','slate',{near:true}),
+  X('surf','durven','Leren surfen','Ericeira, Portugal','Eén week',7,'Mei tot oktober','Boek een surfkamp voor beginners. Op dag vier staan jullie allebei, heel even, op een golf.','waves','lagoon'),
+  X('elfsteden','durven','De Elfstedentocht fietsen','Friesland','Ongeveer 235 km op één dag',1,'Pinkstermaandag','Fiets langs alle elf Friese steden op één dag, met stempelposten onderweg en publiek in de dorpen.','road','sky',{near:true}),
+  X('camino','durven','De laatste 100 km van de Camino lopen','Sarria naar Santiago de Compostela, Spanje','5 tot 6 dagen',6,'Mei, juni of september','Honderd kilometer te voet is het minimum voor de Compostela. Verzamel twee stempels per dag en kom aan bij de kathedraal.','road','field'),
   X('offline','durven','Een weekend zonder telefoon','Een huisje in de natuur','Eén weekend',2,'Elk seizoen','Leg de telefoons in een la, print een kaart en merk hoe lang een dag wordt.','sun','sunrise'),
-  X('kilimanjaro','durven','Samen de Kilimanjaro beklimmen','Tanzania','6 tot 8 dagen',8,'Januari tot maart, juni tot oktober','Met 5.895 meter is Uhuru Peak het hoogste punt van Afrika. Langere routes geven je lichaam meer tijd om te wennen aan de hoogte.','peaks','sunrise',{rare:true}),
+  X('kilimanjaro','durven','De Kilimanjaro beklimmen','Tanzania','6 tot 8 dagen',8,'Januari tot maart, juni tot oktober','Met 5.895 meter is Uhuru Peak het hoogste punt van Afrika. Langere routes geven je lichaam meer tijd om te wennen aan de hoogte.','peaks','sunrise',{rare:true}),
 
   X('marathon','elkaar','Een marathon lopen, met de ander aan de finish','Rotterdam','42,195 km',1,'April','Train ongeveer vier maanden. De ander staat met een bord bij de Erasmusbrug en wacht bij de finish.','road','dawn',{near:true}),
   X('surprise-trip','elkaar','Een verrassingsweekend plannen voor de ander','Een bestemming die de ander niet kent','Eén weekend',2,'Wanneer je wilt','Geef alleen door wat er in de koffer moet. De rest blijft geheim tot het vertrek.','envelope','rose'),
@@ -262,7 +262,7 @@ const EDIT_KEYS = ['title','where','season','time','blurb'];
 function baseItem(id){
   const d = DATA.find(x=>x.id===id); if(d) return d;
   const e = S.entries[id];
-  if(e && e.custom) return {id, cat:'eigen', title:e.custom.title, where:'Eigen idee', time:'', days:1, season:'Wanneer jullie willen', blurb:'Dit idee hebben jullie zelf toegevoegd. Kies samen wanneer, waar en hoe.', motif:e.custom.motif, pal:e.custom.pal};
+  if(e && e.custom) return {id, cat:'eigen', title:e.custom.title, where:'Eigen idee', time:'', days:1, season:'Wanneer jullie willen', blurb:'Dit idee hebben jullie zelf toegevoegd. Kies wanneer, waar en hoe.', motif:e.custom.motif, pal:e.custom.pal};
   return null;
 }
 function getItem(id){
@@ -1199,7 +1199,7 @@ function pickCard(btn){
         <div class="face front">${art(item)}<div class="info"><h3>${esc(item.title)}</h3><p>${esc(item.where)}. ${esc(item.time)}</p></div></div>
       </div></div>
       <div class="reveal-actions" id="revealActions">
-        <button class="btn gold small" data-drawadd="${item.id}" ${on?'disabled':''}>${on?'Staat op jullie lijst':'Samen toevoegen'}</button>
+        <button class="btn gold small" data-drawadd="${item.id}" ${on?'disabled':''}>${on?'Staat op jullie lijst':'Toevoegen'}</button>
         <button class="btn soft small" data-drawopen="${item.id}">Details</button>
         <button class="btn soft small" data-action="redraw">Nog een</button>
       </div>`;
@@ -1299,7 +1299,18 @@ app.addEventListener('click', ev=>{
   if((el = hit('[data-again]'))){ memAgain = memAgain===el.dataset.again ? null : el.dataset.again; memoryEl.querySelectorAll('[data-again]').forEach(b=>b.setAttribute('aria-checked', b.dataset.again===memAgain)); return; }
   if((el = hit('[data-photo]'))){ openLightbox(el.dataset.photo, el.dataset.photoitem); return; }
   if((el = hit('[data-pick]'))){ pickCard(el); return; }
-  if((el = hit('[data-drawadd]'))){ const id = el.dataset.drawadd; if(!S.entries[id] && !needMe()){ addEntry(id, 'both', relRect(el)); el.textContent='Staat op jullie lijst'; el.disabled = true; } return; }
+  if((el = hit('[data-drawadd]'))){
+    const id = el.dataset.drawadd;
+    if(!S.entries[id] && !needMe()){
+      const item = getItem(id), start = relRect(el), addBtn = el;
+      openPicker({title:item.title, onPick:(who)=>{
+        addEntry(id, who, start);
+        addBtn.textContent='Staat op jullie lijst';
+        addBtn.disabled = true;
+      }});
+    }
+    return;
+  }
   if((el = hit('[data-drawopen]'))){ closeLayer(draw); openSheet(el.dataset.drawopen); return; }
   if((el = hit('[data-matchopen]'))){ closeLayer(matchEl); openSheet(el.dataset.matchopen); return; }
   if((el = hit('[data-own]'))){ addOwn(el.dataset.own); return; }
