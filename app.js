@@ -1108,10 +1108,11 @@ function openGate(mode, force){
 function gateError(msg){ const e = $('#gErr'); if(e){ e.textContent = msg; e.hidden = false; } }
 // Supabase kent geen login op gebruikersnaam, alleen op e-mailadres. Daarom
 // maakt de app van elke gebruikersnaam een eigen technisch e-mailadres op
-// een domein dat expres nergens naartoe kan (.invalid, gereserveerd voor
-// precies dit doel). Er wordt nooit echt mail naar verstuurd, want
-// bevestigingsmail staat in Supabase uit.
-const USERNAME_DOMAIN = '@ooit.invalid';
+// een gewoon ogend domein. Er wordt nooit echt mail naar verstuurd, want
+// bevestigingsmail staat in Supabase uit. Bewust geen .invalid of .test:
+// die zijn officieel gereserveerd als nep-domein, en juist daardoor wijst
+// de e-mailcontrole van Supabase ze soms af als overduidelijk onecht.
+const USERNAME_DOMAIN = '@ooit-app.nl';
 function usernameToEmail(u){ return u.toLowerCase() + USERNAME_DOMAIN; }
 function usernameFromSession(){
   const e = String((session && session.user && session.user.email) || '');
