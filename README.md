@@ -9,7 +9,7 @@ Een web-app voor jullie twee. Eén gedeelde lijst met ervaringen, live bijgewerk
 | De app zelf (`index.html`, `app.css`, `app.js`) | Staat in de repository |
 | Database, beveiliging en foto-opslag (`supabase/schema.sql`) | Klaar om te plakken, getest op PostgreSQL 16 |
 | Online zetten (`.github/workflows/deploy.yml`) | Automatisch bij elke push naar de standaardbranch |
-| GitHub Pages aanzetten | Probeert de deploy zelf, anders één klik in Settings |
+| GitHub Pages aanzetten | Eén klik in Settings, zie stap 6 |
 | Supabase-sleutels invullen | Doet de deploy zelf, uit twee repository secrets |
 | Cache-versie ophogen bij updates | Doet de deploy zelf, op basis van de commit |
 | Supabase wakker houden (`.github/workflows/keepalive.yml`) | Elke dag om 05:17 UTC |
@@ -20,15 +20,11 @@ Je hoeft `config.js` en `sw.js` dus niet meer met de hand aan te passen.
 
 Zeven stappen, ongeveer twintig minuten.
 
-### 1. Zet de repository op publiek
+### 1. Repository op publiek (gedaan)
 
-GitHub Pages werkt bij een gratis account alleen vanuit een publieke repository. Deze repository is nu privé.
-
-Ga naar **Settings > General > Danger Zone > Change repository visibility** en kies **Public**.
+GitHub Pages werkt bij een gratis account alleen vanuit een publieke repository. Deze repository staat al op publiek.
 
 Dat is veilig. In de code staan geen geheimen. De publishable key van Supabase hoort openbaar te zijn, want Row Level Security bepaalt wie wat mag. Alleen jullie twee accounts kunnen de lijst en de foto's lezen. Je foto's en teksten staan in Supabase, niet in de repository.
-
-Wil je de repository toch privé houden, dan heb je GitHub Pro nodig. Of je host de app op Netlify of Cloudflare Pages. Dan vervalt wel de automatische invulling van `config.js`.
 
 ### 2. Maak het Supabase-project
 
@@ -66,11 +62,13 @@ Gebruik nooit de secret key of de service_role key. De deploy weigert die en sto
 
 Deze twee secrets gebruiken zowel de deploy als de keep-alive. Je hoeft ze dus maar één keer in te vullen.
 
-### 6. Start de deploy
+### 6. Zet GitHub Pages aan en start de deploy
 
-Ga naar het tabblad **Actions**, kies **Deploy naar GitHub Pages** en klik op **Run workflow**.
+Dit moet je zelf doen. Een workflow mag Pages niet aanzetten, GitHub weigert dat met `Resource not accessible by integration`.
 
-De workflow probeert GitHub Pages zelf aan te zetten, met GitHub Actions als bron. Lukt dat niet, dan zie je in de log `Create Pages site failed`. Ga in dat geval naar **Settings > Pages** en kies bij **Source** de optie **GitHub Actions**. Start de workflow daarna opnieuw.
+1. Ga naar **Settings > Pages**.
+2. Kies bij **Source** de optie **GitHub Actions**.
+3. Ga naar het tabblad **Actions**, kies **Deploy naar GitHub Pages** en klik op **Run workflow**.
 
 Na een minuut staat de app op `https://thanegraaf.github.io/Ooit-app/`.
 
@@ -108,7 +106,7 @@ GitHub zet geplande taken in een publieke repository uit na 60 dagen zonder acti
 | "Deze lijst is compleet" bij een nieuw account | Er zijn al twee leden. Log in met een van die accounts. |
 | Foto's laden niet | Controleer of stap 3 volledig is uitgevoerd. De bucket `photos` moet bestaan. |
 | De deploy faalt op "Verkeerde sleutel" | In `SUPABASE_ANON_KEY` staat een secret key of service_role key. Vervang hem door de publishable key. |
-| De deploy faalt op "Create Pages site failed" | De repository is nog privé, of GitHub laat de workflow Pages niet zelf aanzetten. Doe stap 1 en zet daarna in **Settings > Pages** de bron op **GitHub Actions**. |
+| De deploy faalt op "Get Pages site failed" | Pages staat nog uit. Zet in **Settings > Pages** de bron op **GitHub Actions** en start de workflow opnieuw. |
 
 ## Kosten en grenzen
 
