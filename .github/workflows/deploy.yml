@@ -37,7 +37,14 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
-          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_KEY:-}" ]; then
+          # Haalt onzichtbare tekens weg die vaak per ongeluk meekomen bij
+          # het plakken van een secret: regeleindes en spaties aan het begin
+          # of einde. Zonder deze stap kan zo'n teken de app al laten
+          # struikelen voordat er verbinding met Supabase wordt gemaakt.
+          trim(){ printf '%s' "$1" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+          SUPABASE_URL="$(trim "${SUPABASE_URL:-}")"
+          SUPABASE_KEY="$(trim "${SUPABASE_KEY:-}")"
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
             echo "::warning title=Supabase nog niet gekoppeld::Maak de secrets SUPABASE_URL en SUPABASE_ANON_KEY aan onder Settings > Secrets and variables > Actions. De app toont nu het scherm 'Nog even koppelen'."
             exit 0
           fi
