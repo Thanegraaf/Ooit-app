@@ -81,7 +81,7 @@ Doe dit eerst zelf, daarna je vriendin.
 1. Open de link uit stap 6 in **Safari**. Niet in Chrome of in een app.
 2. Tik op de deelknop en kies **Zet op beginscherm**. Staat er **Open als webapp**, laat dat aan.
 3. Open de app vanaf het beginscherm. Die heeft een eigen login, los van Safari.
-4. Maak een account met e-mailadres en wachtwoord en vul je naam in. Jij krijgt plek 1.
+4. Maak een account met een gebruikersnaam en wachtwoord en vul je naam in. Jij krijgt plek 1. De gebruikersnaam is niet je echte e-mailadres, de app verzint er zelf een technisch adres bij zodat Supabase het als account kan opslaan.
 5. Stuur de link naar je vriendin. Zij doet hetzelfde en krijgt plek 2.
 
 Zet daarna in Supabase **Allow new users to sign up** uit. De lijst laat sowieso maximaal twee leden toe, dit is een extra slot op de deur.

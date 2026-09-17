@@ -1067,9 +1067,9 @@ function openGate(mode, force){
   } else if(mode==='login' || mode==='signup'){
     const up = mode==='signup';
     h += `<h2>${up?'Account aanmaken':'Inloggen'}</h2>
-      <p>${up?'Maak een account met je e-mailadres en een wachtwoord van minimaal 8 tekens.':'Log in om jullie gedeelde lijst te openen.'}</p>
+      <p>${up?'Kies een gebruikersnaam en een wachtwoord van minimaal 8 tekens.':'Log in om jullie gedeelde lijst te openen.'}</p>
       <form onsubmit="return false">
-        <label>E-mailadres<input id="gEmail" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false"></label>
+        <label>Gebruikersnaam<input id="gUser" maxlength="20" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
         <label>Wachtwoord<input id="gPass" type="password" autocomplete="${up?'new-password':'current-password'}" minlength="8"></label>
         <p class="who-err" id="gErr" hidden></p>
         <button class="btn primary block" type="submit" data-action="${up?'signup':'login'}">${up?'Account aanmaken':'Inloggen'}</button>
@@ -1091,7 +1091,7 @@ function openGate(mode, force){
     }
     h += `<button class="textbtn" style="margin-top:12px" data-action="logout">Uitloggen</button>`;
   } else if(mode==='profile'){
-    h += `<h2>Jij bent ${esc(nm(S.me))}</h2><p>Ingelogd als ${esc(session && session.user ? session.user.email : '')}.</p>
+    h += `<h2>Jij bent ${esc(nm(S.me))}</h2><p>Ingelogd als ${esc(usernameFromSession())}.</p>
       <div class="who-pick" aria-hidden="true"><div class="q" style="margin:0;text-align:center">${av('a')}<p style="margin:8px 0 0;font-weight:600">${esc(nm('a'))}</p></div><div class="q" style="margin:0;text-align:center">${av('b')}<p style="margin:8px 0 0;font-weight:600">${esc(nm('b')) }</p></div></div>
       <form onsubmit="return false">
         <label>Jouw naam<input id="gName" maxlength="24" value="${esc(nm(S.me))}"></label>
@@ -1106,26 +1106,38 @@ function openGate(mode, force){
   setTimeout(()=>{ const i = gateEl.querySelector('input'); if(i && !i.value) i.focus({preventScroll:true}); }, 350);
 }
 function gateError(msg){ const e = $('#gErr'); if(e){ e.textContent = msg; e.hidden = false; } }
+// Supabase kent geen login op gebruikersnaam, alleen op e-mailadres. Daarom
+// maakt de app van elke gebruikersnaam een eigen technisch e-mailadres op
+// een domein dat expres nergens naartoe kan (.invalid, gereserveerd voor
+// precies dit doel). Er wordt nooit echt mail naar verstuurd, want
+// bevestigingsmail staat in Supabase uit.
+const USERNAME_DOMAIN = '@ooit.invalid';
+function usernameToEmail(u){ return u.toLowerCase() + USERNAME_DOMAIN; }
+function usernameFromSession(){
+  const e = String((session && session.user && session.user.email) || '');
+  return e.endsWith(USERNAME_DOMAIN) ? e.slice(0, -USERNAME_DOMAIN.length) : e;
+}
 function authErrText(err){
   const m = String((err && err.message) || '');
-  if(/invalid login/i.test(m)) return 'E-mailadres of wachtwoord klopt niet.';
-  if(/already registered|already exists/i.test(m)) return 'Dit e-mailadres heeft al een account. Log in.';
+  if(/invalid login/i.test(m)) return 'Gebruikersnaam of wachtwoord klopt niet.';
+  if(/already registered|already exists/i.test(m)) return 'Deze gebruikersnaam is al in gebruik. Kies een andere, of log in.';
   if(/signups? not allowed|disabled/i.test(m)) return 'Nieuwe accounts aanmaken staat uit in Supabase.';
   if(/password/i.test(m)) return 'Kies een langer of sterker wachtwoord.';
-  if(/email not confirmed/i.test(m)) return 'Bevestig eerst je e-mailadres via de mail van Supabase.';
+  if(/email not confirmed/i.test(m)) return 'Vraag in Supabase na of Confirm email echt uitstaat.';
   if(/rate|too many/i.test(m)) return 'Te veel pogingen. Wacht een paar minuten.';
   if(/fetch|network|load failed/i.test(m)) return 'Geen verbinding. Controleer je internet.';
   return m || 'Er ging iets mis. Probeer het opnieuw.';
 }
 async function doAuth(signup, btn){
-  const email = ($('#gEmail').value||'').trim(), pass = $('#gPass').value||'';
-  if(!/^\S+@\S+\.\S+$/.test(email)) return gateError('Vul een geldig e-mailadres in.');
+  const user = ($('#gUser').value||'').trim(), pass = $('#gPass').value||'';
+  if(!/^[a-zA-Z0-9](?:[a-zA-Z0-9._-]{1,18}[a-zA-Z0-9])?$/.test(user)) return gateError('Gebruikersnaam moet 3 tot 20 tekens zijn: letters, cijfers, punt, streepje of underscore.');
   if(pass.length < 8) return gateError('Het wachtwoord moet minimaal 8 tekens hebben.');
+  const email = usernameToEmail(user);
   btn.disabled = true;
   try{
     const res = signup ? await sb.auth.signUp({email, password:pass}) : await sb.auth.signInWithPassword({email, password:pass});
     if(res.error) throw res.error;
-    if(!res.data.session){ gateError('Bevestig eerst je e-mailadres via de mail van Supabase en log daarna in.'); return; }
+    if(!res.data.session){ gateError('Inloggen lukte niet. Probeer het opnieuw.'); return; }
     session = res.data.session;
     await afterLogin();
   }catch(err){ gateError(authErrText(err)); }
