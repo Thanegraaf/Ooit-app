@@ -58,6 +58,20 @@ jobs:
           printf 'window.OOIT_CONFIG = %s;\n' "$body" > config.js
           echo "config.js gevuld met de Supabase-gegevens uit de secrets."
 
+          # Controle zonder de geheime waarden zelf te tonen: alleen lengte,
+          # vorm en de aanwezigheid van rare tekens. Helpt bij het opsporen
+          # van een verkeerd gekopieerde URL of sleutel.
+          node -e '
+            const u = process.env.SUPABASE_URL, k = process.env.SUPABASE_KEY;
+            const weird = s => [...s].some(c => c.codePointAt(0) < 32 || c.codePointAt(0) === 127);
+            console.log("URL lengte: " + u.length + ", bevat onzichtbare tekens: " + weird(u));
+            console.log("KEY lengte: " + k.length + ", bevat onzichtbare tekens: " + weird(k));
+            try { const p = new URL(u); console.log("URL is geldig volgens de browserregels, host: " + p.host); }
+            catch(e) { console.log("URL is NIET geldig volgens de browserregels: " + e.message); }
+            console.log("KEY begint met sb_publishable_: " + k.startsWith("sb_publishable_"));
+            console.log("KEY ziet eruit als een JWT (drie delen met punten): " + (k.split(".").length === 3));
+          '
+
       - name: Cache-versie op deze commit zetten
         run: |
           set -euo pipefail
