@@ -49,56 +49,89 @@ const CAT = Object.fromEntries(CATS.map(c=>[c.id,c]));
 /* ---------- Ervaringen ---------- */
 const X = (id,cat,title,where,time,days,season,blurb,motif,pal,extra) => Object.assign({id,cat,title,where,time,days,season,blurb,motif,pal},extra||{});
 const DATA = [
-  X('night-train','weg','Wakker worden in een ander land','European Sleeper vanuit Amsterdam','Eén nacht',1,'Hele jaar','Stap ’s avonds in de nachttrein, deel een coupé en word wakker in een andere stad.','train','dusk',{near:true}),
-  X('glacier-express','weg','Een dag in de Glacier Express','Zermatt naar St. Moritz, Zwitserland','8 uur',1,'Hele jaar','Acht trage uren over 291 bruggen en door 91 tunnels, met ramen die doorlopen tot in het dak.','train','alpine'),
-  X('cappadocia','weg','Zweven boven Cappadocië','Göreme, Turkije','Ongeveer 1 uur in de lucht',1,'April tot oktober','Stijg op in het blauwe licht voor zonsopgang, samen met honderd andere ballonnen boven de rotspilaren.','balloon','sunrise'),
-  X('ryokan','weg','Een nacht in een Japans onsendorp','Kinosaki Onsen, Japan','Eén nacht',1,'November tot maart','Loop in een katoenen yukata langs zeven openbare badhuizen en eet daarna een lang kaiseki-diner.','arch','plum'),
-  X('lofoten','weg','Een week in een vissershuisje op Lofoten','Reine, Noorwegen','4 tot 5 dagen',5,'Juni tot augustus','Rode huisjes op palen, bergen die recht uit zee omhoog komen en stokvis op houten rekken langs de haven.','peaks','coast'),
-  X('road-trip','weg','Een roadtrip zonder vaste planning','Schotse Hooglanden','Eén week',7,'Mei tot september','Huur een auto, boek alleen de eerste nacht en beslis elke ochtend waar je heen rijdt.','road','sky'),
-  X('petra','weg','Petra bij kaarslicht zien','Wadi Musa, Jordanië','Eén avond',1,'Hele jaar','Loop zwijgend door de smalle Siq langs een pad van kaarsen, tot de Schatkamer opdoemt in het licht van honderden kaarsen.','arch','clay',{rare:true}),
+  X('night-train','weg','Wakker worden in een ander land','European Sleeper vanuit Amsterdam','Eén nacht',1,'Hele jaar','Stap ’s avonds in de nachttrein, deel een coupé en word wakker in een andere stad.','train','dusk',{near:true,effort:'weekend'}),
+  X('glacier-express','weg','Een dag in de Glacier Express','Zermatt naar St. Moritz, Zwitserland','8 uur',1,'Hele jaar','Acht trage uren over 291 bruggen en door 91 tunnels, met ramen die doorlopen tot in het dak.','train','alpine',{effort:'weekend'}),
+  X('cappadocia','weg','Zweven boven Cappadocië','Göreme, Turkije','Ongeveer 1 uur in de lucht',1,'April tot oktober','Stijg op in het blauwe licht voor zonsopgang, samen met honderd andere ballonnen boven de rotspilaren.','balloon','sunrise',{effort:'sparen',months:[4,5,6,7,8,9,10]}),
+  X('ryokan','weg','Een nacht in een Japans onsendorp','Kinosaki Onsen, Japan','Eén nacht',1,'November tot maart','Loop in een katoenen yukata langs zeven openbare badhuizen en eet daarna een lang kaiseki-diner.','arch','plum',{effort:'sparen',months:[11,12,1,2,3]}),
+  X('lofoten','weg','Een week in een vissershuisje op Lofoten','Reine, Noorwegen','4 tot 5 dagen',5,'Juni tot augustus','Rode huisjes op palen, bergen die recht uit zee omhoog komen en stokvis op houten rekken langs de haven.','peaks','coast',{effort:'sparen',months:[6,7,8]}),
+  X('road-trip','weg','Een roadtrip zonder vaste planning','Schotse Hooglanden','Eén week',7,'Mei tot september','Huur een auto, boek alleen de eerste nacht en beslis elke ochtend waar je heen rijdt.','road','sky',{effort:'sparen',months:[5,6,7,8,9]}),
+  X('petra','weg','Petra bij kaarslicht zien','Wadi Musa, Jordanië','Eén avond',1,'Hele jaar','Loop zwijgend door de smalle Siq langs een pad van kaarsen, tot de Schatkamer opdoemt in het licht van honderden kaarsen.','arch','clay',{rare:true,effort:'sparen'}),
 
-  X('eclipse','buiten','Een totale zonsverduistering zien','Zuid-Spanje of Luxor, Egypte','Een paar minuten',3,'2 augustus 2027','De volgende grote trekt over Zuid-Spanje, Noord-Afrika en het Midden-Oosten. In Luxor duurt de totaliteit ruim zes minuten.','eclipse','eclipse',{rare:true,featured:true}),
-  X('aurora','buiten','Het noorderlicht zien','Tromsø, Noorwegen','3 tot 4 nachten',4,'September tot maart','Rijd op een heldere avond de stad uit, weg van de lampen, en wacht onder één deken. Boek meerdere nachten, dan krijgt het weer meer kansen.','aurora','aurora'),
-  X('dark-sky','buiten','Onder een echt donkere hemel liggen','Dark Sky Park Lauwersmeer','Eén nacht',1,'Oktober tot maart','Neem een deken en thee mee, ga op een maanloze avond op de dijk liggen en geef je ogen twintig minuten. De Melkweg verschijnt vanzelf.','moon','ink',{near:true}),
-  X('wadlopen','buiten','Wadlopen naar Schiermonnikoog','Vanaf de Groningse kust','Ongeveer 4 uur',1,'Mei tot september','Loop met een gids door slik en geulen naar het eiland en neem daarna de boot terug. Modder tot je knieën hoort erbij.','waves','slate',{near:true}),
-  X('paalkamperen','buiten','Een nacht paalkamperen','Een paalkampeerplek in Nederland','Eén nacht',1,'Mei tot september','Zet jullie tent op bij een paal in het bos, zonder voorzieningen. Neem alles mee en laat niets achter.','moon','deep',{near:true}),
-  X('bio-bay','buiten','Door lichtgevend water peddelen','Mosquito Bay, Vieques, Puerto Rico','Eén avond',1,'Rond nieuwe maan','Minuscuul plankton licht op bij elke peddelslag van jullie kajak. Het is een van de helderste lichtgevende baaien ter wereld.','waves','nightsea'),
-  X('sakura','buiten','Kersenbloesem zien vallen in Kyoto','Filosofenpad, Kyoto','2 tot 3 dagen',3,'Eind maart tot begin april','Loop het pad langs het kanaal vroeg in de ochtend, voor de drukte, terwijl de blaadjes op het water vallen.','bloom','blossom'),
-  X('migration','buiten','Op safari tijdens de Grote Migratie','Masai Mara, Kenia','4 tot 5 dagen',5,'Juli tot oktober','Gnoes verzamelen zich urenlang op de oever en steken dan ineens massaal de rivier over. Geduld is de hele reis.','dune','savanna',{rare:true}),
+  X('eclipse','buiten','Een totale zonsverduistering zien','Zuid-Spanje of Luxor, Egypte','Een paar minuten',3,'2 augustus 2027','De volgende grote trekt over Zuid-Spanje, Noord-Afrika en het Midden-Oosten. In Luxor duurt de totaliteit ruim zes minuten.','eclipse','eclipse',{rare:true,featured:true,effort:'sparen',months:[8]}),
+  X('aurora','buiten','Het noorderlicht zien','Tromsø, Noorwegen','3 tot 4 nachten',4,'September tot maart','Rijd op een heldere avond de stad uit, weg van de lampen, en wacht onder één deken. Boek meerdere nachten, dan krijgt het weer meer kansen.','aurora','aurora',{effort:'sparen',months:[9,10,11,12,1,2,3]}),
+  X('dark-sky','buiten','Onder een echt donkere hemel liggen','Dark Sky Park Lauwersmeer','Eén nacht',1,'Oktober tot maart','Neem een deken en thee mee, ga op een maanloze avond op de dijk liggen en geef je ogen twintig minuten. De Melkweg verschijnt vanzelf.','moon','ink',{near:true,effort:'middag',months:[10,11,12,1,2,3]}),
+  X('wadlopen','buiten','Wadlopen naar Schiermonnikoog','Vanaf de Groningse kust','Ongeveer 4 uur',1,'Mei tot september','Loop met een gids door slik en geulen naar het eiland en neem daarna de boot terug. Modder tot je knieën hoort erbij.','waves','slate',{near:true,effort:'middag',months:[5,6,7,8,9]}),
+  X('paalkamperen','buiten','Een nacht paalkamperen','Een paalkampeerplek in Nederland','Eén nacht',1,'Mei tot september','Zet jullie tent op bij een paal in het bos, zonder voorzieningen. Neem alles mee en laat niets achter.','moon','deep',{near:true,effort:'middag',months:[5,6,7,8,9]}),
+  X('bio-bay','buiten','Door lichtgevend water peddelen','Mosquito Bay, Vieques, Puerto Rico','Eén avond',1,'Rond nieuwe maan','Minuscuul plankton licht op bij elke peddelslag van jullie kajak. Het is een van de helderste lichtgevende baaien ter wereld.','waves','nightsea',{effort:'sparen'}),
+  X('sakura','buiten','Kersenbloesem zien vallen in Kyoto','Filosofenpad, Kyoto','2 tot 3 dagen',3,'Eind maart tot begin april','Loop het pad langs het kanaal vroeg in de ochtend, voor de drukte, terwijl de blaadjes op het water vallen.','bloom','blossom',{effort:'sparen',months:[3,4]}),
+  X('migration','buiten','Op safari tijdens de Grote Migratie','Masai Mara, Kenia','4 tot 5 dagen',5,'Juli tot oktober','Gnoes verzamelen zich urenlang op de oever en steken dan ineens massaal de rivier over. Geduld is de hele reis.','dune','savanna',{rare:true,effort:'sparen',months:[7,8,9,10]}),
 
-  X('sunrise-picnic','tafel','Een ontbijtpicknick bij zonsopgang','De duinen bij jullie in de buurt','Eén ochtend',1,'Juni','Zet de wekker vroeg, neem koffie in een thermoskan mee en kijk hoe de zon opkomt.','sun','dawn',{near:true}),
-  X('omakase','tafel','Aan een omakase-bar zitten','Tokio, Japan','Eén avond',1,'Hele jaar','Zo’n twintig stukjes, één voor één uit de handen van de chef. Eet elk stukje meteen.','rings','ink'),
-  X('vendange','tafel','Druiven plukken tijdens de oogst','Bourgogne, Frankrijk','Eén week',7,'September','Veel domeinen zoeken extra handen voor de vendange. Het werk is zwaar, de lunch aan de lange tafel maakt het goed.','grapes','plum'),
-  X('pasta','tafel','Verse pasta leren maken','Bologna, Italië','Eén middag',1,'Hele jaar','Rol het deeg met een lange houten stok tot je de nerf van de plank erdoorheen ziet.','stack','citrus'),
-  X('night-market','tafel','Een nachtmarkt afstruinen','Raohe Street, Taipei','Eén avond',1,'Oktober tot april','Begin bij de peperbroodjes bij de tempelpoort en loop door tot er niets meer in past.','rings','rose'),
-  X('open-fire','tafel','Een hele maaltijd boven open vuur koken','Jullie tuin of een camping','Eén dag',1,'Nazomer','Steek het vuur ’s middags aan. Tegen de avond zijn de kolen klaar voor flatbread, groenten en een stuk vis.','ember','ember'),
-  X('vertical','tafel','Eén wijn proeven over tien jaargangen','Een wijnhuis of goede wijnbar','Eén avond',1,'Hele jaar','Een verticale proeverij laat zien hoe dezelfde wijngaard verandert met het weer van elk jaar.','stripes','wine'),
-  X('star-dinner','tafel','Eten bij een sterrenrestaurant','Een plek die jullie allebei kiezen','Eén avond',1,'Hele jaar','Spaar ervoor, kies het menu met wijnarrangement en neem de hele avond de tijd.','rings','matcha'),
+  X('sunrise-picnic','tafel','Een ontbijtpicknick bij zonsopgang','De duinen bij jullie in de buurt','Eén ochtend',1,'Juni','Zet de wekker vroeg, neem koffie in een thermoskan mee en kijk hoe de zon opkomt.','sun','dawn',{near:true,effort:'middag',months:[5,6,7]}),
+  X('omakase','tafel','Aan een omakase-bar zitten','Tokio, Japan','Eén avond',1,'Hele jaar','Zo’n twintig stukjes, één voor één uit de handen van de chef. Eet elk stukje meteen.','rings','ink',{effort:'sparen'}),
+  X('vendange','tafel','Druiven plukken tijdens de oogst','Bourgogne, Frankrijk','Eén week',7,'September','Veel domeinen zoeken extra handen voor de vendange. Het werk is zwaar, de lunch aan de lange tafel maakt het goed.','grapes','plum',{effort:'sparen',months:[9]}),
+  X('pasta','tafel','Verse pasta leren maken','Bologna, Italië','Eén middag',1,'Hele jaar','Rol het deeg met een lange houten stok tot je de nerf van de plank erdoorheen ziet.','stack','citrus',{effort:'weekend'}),
+  X('night-market','tafel','Een nachtmarkt afstruinen','Raohe Street, Taipei','Eén avond',1,'Oktober tot april','Begin bij de peperbroodjes bij de tempelpoort en loop door tot er niets meer in past.','rings','rose',{effort:'sparen',months:[10,11,12,1,2,3,4]}),
+  X('open-fire','tafel','Een hele maaltijd boven open vuur koken','Jullie tuin of een camping','Eén dag',1,'Nazomer','Steek het vuur ’s middags aan. Tegen de avond zijn de kolen klaar voor flatbread, groenten en een stuk vis.','ember','ember',{effort:'middag',months:[8,9]}),
+  X('vertical','tafel','Eén wijn proeven over tien jaargangen','Een wijnhuis of goede wijnbar','Eén avond',1,'Hele jaar','Een verticale proeverij laat zien hoe dezelfde wijngaard verandert met het weer van elk jaar.','stripes','wine',{effort:'weekend'}),
+  X('star-dinner','tafel','Eten bij een sterrenrestaurant','Een plek die jullie allebei kiezen','Eén avond',1,'Hele jaar','Spaar ervoor, kies het menu met wijnarrangement en neem de hele avond de tijd.','rings','matcha',{effort:'sparen'}),
 
-  X('pottery','maken','Een pottenbakcursus volgen','Een keramiekatelier in de buurt','Zes lessen',6,'Hele jaar','Draai elk een kom en gebruik ze daarna allebei elke dag. Scheef is prima.','bowl','clay'),
-  X('letter','maken','Elkaar een brief schrijven voor over tien jaar','Jullie keukentafel','Eén avond',1,'Wanneer je wilt','Schrijf los van elkaar, sluit de enveloppen en zet de datum erop waarop ze open mogen.','envelope','dawn'),
-  X('tree','maken','Een boom planten','Een plek die voor jullie telt','Eén middag',1,'November tot maart','Plant een inheemse boom in de rustperiode. Noteer de datum en de plek, zodat je elk jaar kunt kijken hoe hij groeit.','tree','matcha'),
-  X('photobook','maken','Een fotoboek maken van het afgelopen jaar','Thuis','Een paar avonden',2,'December','Kies de foto’s van één jaar en schrijf bij elke maand één zin.','frames','darkroom'),
-  X('dance','maken','Een danscursus volgen','Een dansschool in de buurt','Tien lessen',5,'Hele jaar','Kies salsa, tango of stijldansen. De eerste les voelt ongemakkelijk, vanaf de vierde wordt het leuk.','spotlight','stage'),
-  X('moestuin','maken','Een moestuin beginnen','Jullie tuin of een volkstuin','Eén seizoen',5,'Maart tot oktober','Begin klein met sla, radijs en tomaten. Eet in augustus jullie eerste salade uit eigen grond.','bloom','field',{near:true}),
-  X('song','maken','Een liedje leren spelen','Jullie woonkamer','Ongeveer drie maanden',5,'Wanneer je wilt','Kies één nummer dat jullie allebei mooi vinden. Oefen een kwartier per dag en speel het voor vrienden als jullie er klaar voor zijn.','strings','dusk'),
-  X('furniture','maken','Een meubel bouwen dat blijft','Een houtbewerkingscursus','Eén week',5,'Hele jaar','Bouw een bank of tafel met handgereedschap. Hij gaat langer mee dan alles uit een bouwpakket.','stack','field'),
+  X('pottery','maken','Een pottenbakcursus volgen','Een keramiekatelier in de buurt','Zes lessen',6,'Hele jaar','Draai elk een kom en gebruik ze daarna allebei elke dag. Scheef is prima.','bowl','clay',{effort:'weekend'}),
+  X('letter','maken','Elkaar een brief schrijven voor over tien jaar','Jullie keukentafel','Eén avond',1,'Wanneer je wilt','Schrijf los van elkaar, sluit de enveloppen en zet de datum erop waarop ze open mogen.','envelope','dawn',{effort:'middag'}),
+  X('tree','maken','Een boom planten','Een plek die voor jullie telt','Eén middag',1,'November tot maart','Plant een inheemse boom in de rustperiode. Noteer de datum en de plek, zodat je elk jaar kunt kijken hoe hij groeit.','tree','matcha',{effort:'middag',months:[11,12,1,2,3]}),
+  X('photobook','maken','Een fotoboek maken van het afgelopen jaar','Thuis','Een paar avonden',2,'December','Kies de foto’s van één jaar en schrijf bij elke maand één zin.','frames','darkroom',{effort:'middag',months:[12]}),
+  X('dance','maken','Een danscursus volgen','Een dansschool in de buurt','Tien lessen',5,'Hele jaar','Kies salsa, tango of stijldansen. De eerste les voelt ongemakkelijk, vanaf de vierde wordt het leuk.','spotlight','stage',{effort:'weekend'}),
+  X('moestuin','maken','Een moestuin beginnen','Jullie tuin of een volkstuin','Eén seizoen',5,'Maart tot oktober','Begin klein met sla, radijs en tomaten. Eet in augustus jullie eerste salade uit eigen grond.','bloom','field',{near:true,effort:'weekend',months:[3,4,5,6,7,8,9,10]}),
+  X('song','maken','Een liedje leren spelen','Jullie woonkamer','Ongeveer drie maanden',5,'Wanneer je wilt','Kies één nummer dat jullie allebei mooi vinden. Oefen een kwartier per dag en speel het voor vrienden als jullie er klaar voor zijn.','strings','dusk',{effort:'middag'}),
+  X('furniture','maken','Een meubel bouwen dat blijft','Een houtbewerkingscursus','Eén week',5,'Hele jaar','Bouw een bank of tafel met handgereedschap. Hij gaat langer mee dan alles uit een bouwpakket.','stack','field',{effort:'weekend'}),
 
-  X('skydive','durven','Een tandemsprong maken','Texel','Minder dan een minuut vrije val',1,'Mei tot september','Spring vanaf ongeveer drie kilometer hoogte en zie het hele eiland en de Waddenzee voordat de parachute opengaat.','parachute','coast',{near:true}),
-  X('nieuwjaarsduik','durven','De Nieuwjaarsduik doen','Scheveningen','Ongeveer twee minuten',1,'1 januari','Ren hand in hand de zee in, samen met duizenden mensen met oranje mutsen. Op het strand wacht warme soep.','waves','slate',{near:true}),
-  X('surf','durven','Leren surfen','Ericeira, Portugal','Eén week',7,'Mei tot oktober','Boek een surfkamp voor beginners. Op dag vier staan jullie allebei, heel even, op een golf.','waves','lagoon'),
-  X('elfsteden','durven','De Elfstedentocht fietsen','Friesland','Ongeveer 235 km op één dag',1,'Pinkstermaandag','Fiets langs alle elf Friese steden op één dag, met stempelposten onderweg en publiek in de dorpen.','road','sky',{near:true}),
-  X('camino','durven','De laatste 100 km van de Camino lopen','Sarria naar Santiago de Compostela, Spanje','5 tot 6 dagen',6,'Mei, juni of september','Honderd kilometer te voet is het minimum voor de Compostela. Verzamel twee stempels per dag en kom aan bij de kathedraal.','road','field'),
-  X('offline','durven','Een weekend zonder telefoon','Een huisje in de natuur','Eén weekend',2,'Elk seizoen','Leg de telefoons in een la, print een kaart en merk hoe lang een dag wordt.','sun','sunrise'),
-  X('kilimanjaro','durven','De Kilimanjaro beklimmen','Tanzania','6 tot 8 dagen',8,'Januari tot maart, juni tot oktober','Met 5.895 meter is Uhuru Peak het hoogste punt van Afrika. Langere routes geven je lichaam meer tijd om te wennen aan de hoogte.','peaks','sunrise',{rare:true}),
+  X('skydive','durven','Een tandemsprong maken','Texel','Minder dan een minuut vrije val',1,'Mei tot september','Spring vanaf ongeveer drie kilometer hoogte en zie het hele eiland en de Waddenzee voordat de parachute opengaat.','parachute','coast',{near:true,effort:'weekend',months:[5,6,7,8,9]}),
+  X('nieuwjaarsduik','durven','De Nieuwjaarsduik doen','Scheveningen','Ongeveer twee minuten',1,'1 januari','Ren hand in hand de zee in, samen met duizenden mensen met oranje mutsen. Op het strand wacht warme soep.','waves','slate',{near:true,effort:'middag',months:[1]}),
+  X('surf','durven','Leren surfen','Ericeira, Portugal','Eén week',7,'Mei tot oktober','Boek een surfkamp voor beginners. Op dag vier staan jullie allebei, heel even, op een golf.','waves','lagoon',{effort:'sparen',months:[5,6,7,8,9,10]}),
+  X('elfsteden','durven','De Elfstedentocht fietsen','Friesland','Ongeveer 235 km op één dag',1,'Pinkstermaandag','Fiets langs alle elf Friese steden op één dag, met stempelposten onderweg en publiek in de dorpen.','road','sky',{near:true,effort:'middag',months:[5,6]}),
+  X('camino','durven','De laatste 100 km van de Camino lopen','Sarria naar Santiago de Compostela, Spanje','5 tot 6 dagen',6,'Mei, juni of september','Honderd kilometer te voet is het minimum voor de Compostela. Verzamel twee stempels per dag en kom aan bij de kathedraal.','road','field',{effort:'sparen',months:[5,6,9]}),
+  X('offline','durven','Een weekend zonder telefoon','Een huisje in de natuur','Eén weekend',2,'Elk seizoen','Leg de telefoons in een la, print een kaart en merk hoe lang een dag wordt.','sun','sunrise',{effort:'weekend'}),
+  X('kilimanjaro','durven','De Kilimanjaro beklimmen','Tanzania','6 tot 8 dagen',8,'Januari tot maart, juni tot oktober','Met 5.895 meter is Uhuru Peak het hoogste punt van Afrika. Langere routes geven je lichaam meer tijd om te wennen aan de hoogte.','peaks','sunrise',{rare:true,effort:'sparen',months:[1,2,3,6,7,8,9,10]}),
 
-  X('marathon','elkaar','Een marathon lopen, met de ander aan de finish','Rotterdam','42,195 km',1,'April','Train ongeveer vier maanden. De ander staat met een bord bij de Erasmusbrug en wacht bij de finish.','road','dawn',{near:true}),
-  X('surprise-trip','elkaar','Een verrassingsweekend plannen voor de ander','Een bestemming die de ander niet kent','Eén weekend',2,'Wanneer je wilt','Geef alleen door wat er in de koffer moet. De rest blijft geheim tot het vertrek.','envelope','rose'),
-  X('stage','elkaar','Op een podium spreken, met de ander op de eerste rij','Een lokaal evenement of meetup','Tien minuten',1,'Wanneer je wilt','Kies een onderwerp dat je goed kent, oefen vijf keer hardop voor de ander en vraag de organisator om een kort slot.','spotlight','stage'),
-  X('solo','elkaar','Een week alleen reizen en daarna alles vertellen','Waar je maar wilt','Eén week',7,'Wanneer je wilt','Reis apart, houd een dagboek bij en lees het de ander voor bij thuiskomst.','road','coast'),
-  X('teach','elkaar','Elkaar een vaardigheid leren','Thuis','Een paar avonden',3,'Wanneer je wilt','Ieder kiest iets waar hij of zij goed in is. Leer het de ander in kleine stappen en laat fouten maken.','stack','sky'),
-  X('hometown','elkaar','Elkaar meenemen naar waar je opgroeide','Jullie geboorteplaatsen','Twee weekenden',4,'Wanneer je wilt','Laat de ander je oude school, straat en favoriete plek zien. Vertel de verhalen die nog niet verteld zijn.','arch','dawn'),
-  X('course','elkaar','Iets leren waar je altijd al zin in had','Een cursus naar keuze','Eén seizoen',5,'Wanneer je wilt','Kies een eigen cursus en laat de ander aan het eind zien wat je kunt.','strings','plum')
+  X('marathon','elkaar','Een marathon lopen, met de ander aan de finish','Rotterdam','42,195 km',1,'April','Train ongeveer vier maanden. De ander staat met een bord bij de Erasmusbrug en wacht bij de finish.','road','dawn',{near:true,effort:'weekend',months:[4]}),
+  X('surprise-trip','elkaar','Een verrassingsweekend plannen voor de ander','Een bestemming die de ander niet kent','Eén weekend',2,'Wanneer je wilt','Geef alleen door wat er in de koffer moet. De rest blijft geheim tot het vertrek.','envelope','rose',{effort:'weekend'}),
+  X('stage','elkaar','Op een podium spreken, met de ander op de eerste rij','Een lokaal evenement of meetup','Tien minuten',1,'Wanneer je wilt','Kies een onderwerp dat je goed kent, oefen vijf keer hardop voor de ander en vraag de organisator om een kort slot.','spotlight','stage',{effort:'middag'}),
+  X('solo','elkaar','Een week alleen reizen en daarna alles vertellen','Waar je maar wilt','Eén week',7,'Wanneer je wilt','Reis apart, houd een dagboek bij en lees het de ander voor bij thuiskomst.','road','coast',{effort:'sparen'}),
+  X('teach','elkaar','Elkaar een vaardigheid leren','Thuis','Een paar avonden',3,'Wanneer je wilt','Ieder kiest iets waar hij of zij goed in is. Leer het de ander in kleine stappen en laat fouten maken.','stack','sky',{effort:'middag'}),
+  X('hometown','elkaar','Elkaar meenemen naar waar je opgroeide','Jullie geboorteplaatsen','Twee weekenden',4,'Wanneer je wilt','Laat de ander je oude school, straat en favoriete plek zien. Vertel de verhalen die nog niet verteld zijn.','arch','dawn',{effort:'weekend'}),
+  X('course','elkaar','Iets leren waar je altijd al zin in had','Een cursus naar keuze','Eén seizoen',5,'Wanneer je wilt','Kies een eigen cursus en laat de ander aan het eind zien wat je kunt.','strings','plum',{effort:'weekend'}),
+  X('sunrise-spot','buiten','Zonsopgang kijken op een plek waar je nooit komt','Een plek vlakbij waar je altijd langsrijdt','Eén ochtend',1,'Hele jaar','Zoek op de kaart een plek waar je nooit stopt. Zet de wekker een uur voor zonsopgang en neem een thermoskan mee.','sun','dawn',{near:true,effort:'middag'}),
+  X('garden-camp','buiten','Een nacht kamperen in de eigen tuin','Jullie tuin of balkon','Eén nacht',1,'Mei tot september','Zet de tent naast de achterdeur. Geen reistijd, geen boeking, wel dezelfde sterren en dezelfde kou in de ochtend.','moon','forest',{near:true,effort:'middag',months:[5,6,7,8,9]}),
+  X('lost-bike','buiten','Fietsen tot je verdwaald bent','Vanaf jullie eigen voordeur','Eén dag',1,'April tot oktober','Sla elke keer af waar het mooi lijkt, tot je niet meer weet waar je bent. Zoek daarna de weg terug zonder navigatie.','road','field',{near:true,effort:'middag',months:[4,5,6,7,8,9,10]}),
+  X('continents-cook','tafel','Een gerecht uit elk werelddeel koken','Jullie eigen keuken','Zes avonden',3,'Hele jaar','Zes avonden, zes werelddelen. Kies elke keer één gerecht dat je nog nooit gemaakt hebt en kook het van de grond af.','bowl','citrus',{near:true,effort:'middag'}),
+  X('wild-food','tafel','Een maaltijd van alleen wat je zelf oogst','Het bos, het water of de moestuin','Eén dag',1,'Augustus tot oktober','Vis, pluk of oogst alles zelf. Wat je niet vindt, staat niet op tafel. Dat maakt het bord kleiner en de maaltijd beter.','mushroom','forest',{near:true,effort:'middag',months:[8,9,10]}),
+  X('no-plan-weekend','weg','Een weekend zonder plan, alleen een auto','Waar de weg toevallig heen gaat','Eén weekend',2,'Hele jaar','Geen boeking en geen bestemming. Rijd vrijdag weg en zoek pas onderweg een plek om te slapen.','road','sky',{near:true,effort:'weekend'}),
+  X('dying-craft','maken','Een ambacht leren dat bijna verdwenen is','Een werkplaats bij jullie in de buurt','Een paar dagen',2,'Hele jaar','Denk aan rietdekken, boekbinden, smeden of klompen maken. Vaak zijn er nog een paar mensen die het willen doorgeven.','stack','clay',{near:true,effort:'weekend'}),
+  X('westcoast','weg','De westkust van de VS afrijden','San Francisco naar San Diego','2 weken',14,'Mei tot oktober','Highway 1 langs de kliffen, met stops bij Big Sur en Santa Barbara. Huur de auto ruim van tevoren.','road','sunrise',{effort:'sparen',months:[5,6,7,8,9,10]}),
+  X('ice-hotel','weg','Een nacht in een ijshotel','Jukkasjärvi, Zweden','Eén nacht',1,'December tot april','Slapen op een blok ijs in een slaapzak die tegen min dertig kan. Ontbijt in de warme ruimte ernaast.','peaks','alpine',{effort:'sparen',months:[12,1,2,3,4]}),
+  X('great-barrier','buiten','Duiken op het Great Barrier Reef','Queensland, Australië','3 tot 4 dagen',4,'Juni tot oktober','Het grootste rif ter wereld, en het verandert snel. Ga met een boot die meerdere dagen buitengaats blijft.','waves','lagoon',{rare:true,effort:'sparen',months:[6,7,8,9,10]}),
+  X('inca-trail','durven','De Inca Trail naar Machu Picchu lopen','Cusco, Peru','4 dagen',4,'Mei tot september','Vier dagen over oude stenen paden, met op de laatste ochtend de Zonnepoort. Het aantal vergunningen per dag is beperkt.','peaks','field',{effort:'sparen',months:[5,6,7,8,9]}),
+  X('sahara','weg','Een nacht in een tent midden in de Sahara','Merzouga, Marokko','Eén nacht',1,'Oktober tot april','Op een kameel het duingebied in, eten bij een vuur en slapen onder een hemel zonder één lamp in de buurt.','dune','savanna',{effort:'sparen',months:[10,11,12,1,2,3,4]}),
+  X('blind-map','weg','Blind op de kaart wijzen en daarheen reizen','Waar jullie vinger landt','Eén week',7,'Wanneer je wilt','Ogen dicht, vinger op de wereldkaart. Waar hij landt, daar gaan jullie heen. Afspraak is afspraak.','circles','plum',{effort:'sparen'}),
+  X('desert-island','weg','Een week op een onbewoond eiland','Bijvoorbeeld de Filipijnen of Indonesië','Eén week',7,'Hele jaar','Laat je afzetten met water, eten en een tent. Spreek van tevoren af wanneer de boot je weer komt halen.','waves','lagoon',{rare:true,effort:'sparen'}),
+  X('everest-bc','durven','Everest basecamp halen','Khumbu, Nepal','12 tot 14 dagen',14,'Maart tot mei, oktober tot november','Van Lukla omhoog naar 5.364 meter, in kleine dagetappes zodat je lichaam went aan de hoogte.','peaks','alpine',{rare:true,effort:'sparen',months:[3,4,5,10,11]}),
+  X('orca-kayak','buiten','Een orka zien vanaf een kajak','Vesterålen, Noorwegen','3 tot 4 dagen',4,'November tot januari','De orka’s volgen de haring de fjorden in. Vanuit een kajak zit je laag genoeg om de rugvin op ooghoogte te zien.','waves','nightsea',{rare:true,effort:'sparen',months:[11,12,1]}),
+  X('antarctica','weg','Een nacht op Antarctica','Antarctisch schiereiland','10 tot 12 dagen',12,'November tot maart','Varen vanaf Ushuaia door de Drake Passage, en dan één nacht in een slaapzak op het ijs zelf.','peaks','deep',{rare:true,effort:'sparen',months:[11,12,1,2,3]}),
+  X('zero-g','durven','Een zero gravity vlucht meemaken','Bordeaux of Florida','Eén dag',1,'Hele jaar','Een vliegtuig vliegt parabolen. Bovenin ben je ruim twintig seconden gewichtloos, en dat vijftien keer achter elkaar.','parachute','ink',{rare:true,effort:'sparen'}),
+  X('seven-continents','weg','Alle zeven continenten bezocht hebben','De hele wereld','Een leven lang',30,'Wanneer je wilt','Europa en Azië zijn zo gedaan. Antarctica is de laatste en de duurste. Houd bij welke jullie al hebben.','circles','coast',{rare:true,effort:'sparen'}),
+  X('old-together','weg','Deze lijst opnieuw lezen als jullie oud zijn','Een terras ergens ver weg','Eén middag',1,'Wanneer je wilt','Neem deze lijst mee en lees hem hardop voor. Streep af wat gelukt is en lach om wat er nooit van gekomen is.','sun','dawn',{rare:true,effort:'sparen'}),
+  X('bivak','buiten','Buiten slapen zonder tent','Een bivakplek in Nederland','Eén nacht',1,'Juni tot september','Alleen een slaapzak en een matje. Je wordt wakker met dauw op je gezicht en de eerste vogels erbij.','moon','deep',{near:true,effort:'middag',months:[6,7,8,9]}),
+  X('perseiden','buiten','De Perseïden kijken vanaf een matras in het gras','Een donker weiland','Eén nacht',1,'Rond 12 augustus','In de nacht van 11 op 12 augustus vallen er tientallen per uur. Leg een matras in het gras en kijk naar het noordoosten.','moon','nightsea',{near:true,effort:'middag',months:[8]}),
+  X('uitkijktoren','buiten','Slapen in een uitkijktoren zonder stroom','Een natuurhut in Nederland of Duitsland','Eén nacht',1,'April tot oktober','Geen stroom en geen kraan, wel uitzicht over het bos. Neem alles mee, ook je eigen drinkwater.','arch','forest',{near:true,effort:'weekend',months:[4,5,6,7,8,9,10]}),
+  X('bergmeer','durven','Zwemmen in een bergmeer dat te koud is','De Alpen of de Pyreneeën','Eén middag',1,'Juni tot september','Het water komt van de sneeuw en blijft rond de tien graden. Je bent er zo weer uit, maar je vergeet het nooit.','waves','alpine',{effort:'weekend',months:[6,7,8,9]}),
+  X('iceland-ring','weg','De ringweg van IJsland rijden','Route 1, IJsland','10 dagen',10,'Juni tot augustus','Met de klok mee en zonder haast. Watervallen, zwarte stranden en een gletsjerlagune, allemaal langs dezelfde weg.','road','deep',{effort:'sparen',months:[6,7,8]}),
+  X('volcano','durven','Een actieve vulkaan beklimmen','Stromboli in Italië of Fuego in Guatemala','2 dagen',2,'Mei tot september','Klim in de middag omhoog en wacht boven tot het donker wordt. Dan pas zie je de uitbarstingen echt.','ember','ember',{effort:'sparen',months:[5,6,7,8,9]}),
+  X('midnight-sun','buiten','De middernachtzon zien op de Noordkaap','Nordkapp, Noorwegen','4 tot 5 dagen',5,'Mei tot juli','Tussen half mei en eind juli gaat de zon daar niet onder. Om middernacht raakt hij de horizon en klimt weer omhoog.','sun','sunrise',{effort:'sparen',months:[5,6,7]}),
+  X('uyuni','weg','De zoutvlakte van Uyuni als spiegel zien','Salar de Uyuni, Bolivia','2 tot 3 dagen',3,'Januari tot maart','In het regenseizoen staat er een laag water op het zout. De vlakte wordt dan een spiegel tot aan de horizon.','stripes','slate',{rare:true,effort:'sparen',months:[1,2,3]}),
+  X('fjord-kayak','buiten','Kajakken tussen de fjorden','Nærøyfjord, Noorwegen','2 tot 3 dagen',3,'Juni tot augustus','Peddel tussen wanden van duizend meter hoog. Vanaf het water zie je pas hoe smal zo’n fjord echt is.','waves','coast',{effort:'sparen',months:[6,7,8]}),
+  X('hut-tocht','durven','Een hut-tot-huttocht lopen in de Alpen','Oostenrijk of Zwitserland','5 dagen',5,'Juli tot september','Elke dag lopen naar de volgende berghut. Je draagt alleen wat je nodig hebt, eten en bed staan klaar.','peaks','alpine',{effort:'sparen',months:[7,8,9]}),
+  X('vuurtoren','weg','Slapen in een vuurtoren aan zee','Nederland, Denemarken of Schotland','Eén nacht',1,'Hele jaar','Een paar oude vuurtorens zijn nu logies. Rond gebouwd, smalle trap, en de zee aan alle kanten.','arch','slate',{near:true,effort:'weekend'}),
+  X('whale-shark','durven','Zwemmen met walvishaaien','Isla Mujeres in Mexico of Ningaloo in Australië','2 dagen',2,'Juni tot september','De grootste vis ter wereld, en volstrekt ongevaarlijk. Je zwemt ernaast terwijl hij plankton zeeft.','waves','lagoon',{rare:true,effort:'sparen',months:[6,7,8,9]}),
+  X('stratos','durven','De kromming van de aarde zien vanaf de rand van de ruimte','Een stratosfeerballon','Eén dag',1,'Hele jaar','Met een ballon naar ruim dertig kilometer hoogte. Daar is de lucht zwart en zie je de aarde bol worden.','balloon','eclipse',{rare:true,effort:'sparen'})
 ];
 
 /* ---------- Artwork ---------- */
@@ -236,7 +269,8 @@ function art(item, cls){
 const I = {
   plus:'<svg class="i-plus" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   check:'<svg class="i-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
-  close:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+  close:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  gift:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16v9H4z"/><path d="M3 7.5h18V11H3z"/><path d="M12 7.5V20"/><path d="M12 7.5S10.5 4 8.2 4a2.1 2.1 0 0 0 0 3.5zM12 7.5s1.5-3.5 3.8-3.5a2.1 2.1 0 0 1 0 3.5z"/></svg>'
 };
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $ = s => document.querySelector(s);
@@ -284,6 +318,38 @@ function imgTag(path, alt){
 function isoDate(ts){ const d = new Date(ts); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fromIso(s){ const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m ? new Date(+m[1], +m[2]-1, +m[3], 12).getTime() : null; }
 const livedDate = e => (e.memory && fromIso(e.memory.date)) || e.lived;
+
+/* ---------- Moeite en seizoen ---------- */
+const EFFORTS = {middag:'Een middag', weekend:'Een weekend', sparen:'Een jaar sparen'};
+const EFFORT_SHORT = {middag:'Middag', weekend:'Weekend', sparen:'Sparen'};
+const effortOf = it => (it && EFFORTS[it.effort]) ? it.effort : 'weekend';
+function inSeason(it, month){
+  const m = month || (new Date().getMonth()+1);
+  return !it || !Array.isArray(it.months) || it.months.indexOf(m) !== -1;
+}
+
+/* ---------- Verrassing ---------- */
+// Let op: de gegevens staan in de gedeelde database. De app verbergt de kaart,
+// maar wie in Supabase kijkt kan hem alsnog zien. Het is een cadeau, geen kluis.
+function fmtDay(iso){ const t = fromIso(iso); return t ? fmtDate(t) : ''; }
+function daysLeft(iso){
+  const t = fromIso(iso); if(t===null) return '';
+  const d = Math.ceil((t - Date.now())/86400000);
+  return d <= 0 ? 'Vandaag' : (d===1 ? 'Nog 1 dag' : `Nog ${d} dagen`);
+}
+function surpriseOf(e){ return (e && e.surprise && e.surprise.openAt) ? e.surprise : null; }
+function surpriseDue(sp){ const t = fromIso(sp.openAt); return t===null || t <= Date.now(); }
+// Verborgen voor de ontvanger, tot de datum bereikt is.
+function isHidden(id, e){
+  e = e || S.entries[id];
+  const sp = surpriseOf(e);
+  return !!(sp && S.me && sp.by !== S.me && !surpriseDue(sp));
+}
+function isPendingGift(id, e){
+  e = e || S.entries[id];
+  const sp = surpriseOf(e);
+  return !!(sp && S.me && sp.by === S.me && !surpriseDue(sp));
+}
 
 /* ---------- Supabase ---------- */
 const CFG = window.OOIT_CONFIG || {};
@@ -371,7 +437,8 @@ function partnerChanges(prev, next){
     if(!n) continue;
     const item = getItem(id); if(!item) continue;
     if(!p && n.addedBy && n.addedBy!==S.me){
-      toast(`${nm(n.addedBy)} voegde \u201c${item.title}\u201d toe`);
+      if(isHidden(id, n)) toast(`${nm(n.addedBy)} heeft een verrassing voor je`);
+      else toast(`${nm(n.addedBy)} voegde \u201c${item.title}\u201d toe`);
     } else if(p && n.updatedBy && n.updatedBy!==S.me){
       const was = p.wants && p.wants.a && p.wants.b, now = n.wants && n.wants.a && n.wants.b;
       if(now && !was && n.for==='both') showMatch(id);
@@ -446,7 +513,7 @@ async function afterLogin(){
 /* ---------- Elementen ---------- */
 const app = $('#app'), browse = $('#browse'), mylist = $('#mylist');
 const content = $('#browseContent'), listContent = $('#listContent');
-const sheet = $('#sheet'), draw = $('#draw'), backdrop = $('#backdrop');
+const sheet = $('#sheet'), draw = $('#draw'), dice = $('#dice'), backdrop = $('#backdrop');
 const pickerEl = $('#picker'), gateEl = $('#who'), matchEl = $('#match');
 const memoryEl = $('#memory'), editorEl = $('#editor'), lightbox = $('#lightbox');
 let cat = 'all', query = '', listView = 'todo', listFor = 'all', listEdit = false, lastFocus = null;
@@ -480,7 +547,7 @@ function tile(item){
     <div class="tile-art">${art(item)}<button class="art-btn" data-open="${item.id}" aria-label="Bekijk ${esc(item.title)}"></button>${badges(item)}${addBtn(item)}</div>
     <h3>${esc(item.title)}</h3>
     <p class="where">${esc(item.where)}</p>
-    <p class="time">${esc(item.time)}</p>
+    <p class="time">${esc(item.time)}<span class="effort e-${effortOf(item)}">${EFFORT_SHORT[effortOf(item)]}</span></p>
   </article>`;
 }
 
@@ -498,31 +565,40 @@ function shelf(title, sub, items, catId){
   return `<section class="section"><div class="section-head"><div><h2>${title}</h2><p>${sub}</p></div>${catId?`<button class="textbtn" data-cat="${catId}" aria-label="Alles uit ${title}">Alles</button>`:`<span class="count">${items.length}</span>`}</div>
     <div class="shelf">${items.map(tile).join('')}</div></section>`;
 }
+const openCards = () => DATA.filter(x=>!S.entries[x.id]);
 function renderBrowse(){
   renderChips();
   let h = '';
+  const open = openCards();
   if(query){
-    const res = DATA.map(x=>getItem(x.id)).filter(matches);
+    const res = open.map(x=>getItem(x.id)).filter(matches);
     h += `<div class="section"><div class="section-head"><div><h2>Resultaten</h2></div><span class="count">${res.length} gevonden</span></div>`;
     if(res.length) h += `<div class="grid">${res.map(tile).join('')}</div>`;
     else h += `<div class="empty"><h3>Niets gevonden voor \u201c${esc(query)}\u201d</h3><p>Misschien hoort het toch op jullie lijst. Voeg het toe als eigen idee.</p><button class="btn primary" data-own="${esc(query)}">\u201c${esc(query.slice(0,26))}\u201d toevoegen</button></div>`;
     h += `</div>`;
   } else if(cat==='all'){
-    const feat = getItem(DATA.find(x=>x.featured).id);
     h += waitingShelf();
-    h += `<article class="hero" data-open="${feat.id}" data-tile="${feat.id}">
-      ${art(feat)}
-      <div class="hero-body">
-        <div><span class="pill">Zeldzaam</span><h3>${esc(feat.title)}</h3><p>Volgende kans: ${esc(feat.season)}</p></div>
-        ${addBtn(feat)}
-      </div></article>`;
-    h += shelf('Dichtbij huis','Grote momenten binnen bereik, in Nederland of met de trein.', DATA.filter(x=>x.near).map(x=>getItem(x.id)));
-    h += shelf('Eén keer in je leven','Zeldzame kansen. Plan deze op tijd.', DATA.filter(x=>x.rare && !x.featured).map(x=>getItem(x.id)));
-    CATS.filter(c=>c.id!=='eigen').forEach(c=>{ h += shelf(c.name, c.blurb, DATA.filter(x=>x.cat===c.id).map(x=>getItem(x.id)), c.id); });
+    const top = open.find(x=>x.featured) || open.find(x=>x.rare) || open[0];
+    if(top){
+      const feat = getItem(top.id);
+      h += `<article class="hero" data-open="${feat.id}" data-tile="${feat.id}">
+        ${art(feat)}
+        <div class="hero-body">
+          <div>${feat.rare?'<span class="pill">Zeldzaam</span>':''}<h3>${esc(feat.title)}</h3><p>Beste tijd: ${esc(feat.season)}</p></div>
+          ${addBtn(feat)}
+        </div></article>`;
+    }
+    h += shelf('Dichtbij huis','Grote momenten binnen bereik, in Nederland of met de trein.', open.filter(x=>x.near).map(x=>getItem(x.id)));
+    h += shelf('Eén keer in je leven','Zeldzame kansen. Plan deze op tijd.', open.filter(x=>x.rare && x!==top).map(x=>getItem(x.id)));
+    CATS.filter(c=>c.id!=='eigen').forEach(c=>{ h += shelf(c.name, c.blurb, open.filter(x=>x.cat===c.id).map(x=>getItem(x.id)), c.id); });
+    if(!open.length) h += `<div class="empty"><div class="empty-art">${art({id:'alldone',motif:'circles',pal:'matcha'})}</div><h3>Alles staat al op jullie lijst</h3><p>Elke kaart uit de catalogus hebben jullie gekozen. Verwijder er een van jullie lijst en hij komt hier vanzelf terug.</p><button class="btn primary" data-tab="mylist">Naar onze lijst</button></div>`;
   } else {
     const c = CAT[cat];
+    const inCat = open.filter(x=>x.cat===cat);
     h += `<div class="cat-intro"><div class="swatch">${art({id:'cat-'+c.id, motif:c.art[0], pal:c.art[1]})}</div><div><h2>${c.name}</h2><p>${c.blurb}</p></div></div>`;
-    h += `<div class="grid">${DATA.filter(x=>x.cat===cat).map(x=>tile(getItem(x.id))).join('')}</div>`;
+    h += inCat.length
+      ? `<div class="grid">${inCat.map(x=>tile(getItem(x.id))).join('')}</div>`
+      : `<div class="empty"><h3>Niets meer over</h3><p>Alles uit ${esc(c.name)} staat al op jullie lijst.</p><button class="btn primary" data-tab="mylist">Naar onze lijst</button></div>`;
   }
   content.innerHTML = h;
 }
@@ -543,6 +619,8 @@ function listItems(){
     .sort((a,b)=>(b.e.addedAt||0)-(a.e.addedAt||0));
 }
 function statusText(e){
+  const sp = surpriseOf(e);
+  if(sp && !surpriseDue(sp) && sp.by===S.me) return `Verrassing voor ${nm(other(S.me))}, opent ${fmtDay(sp.openAt)}`;
   if(e.lived) return 'Beleefd op '+fmtDate(livedDate(e));
   if(e.for!=='both') return 'Voor '+nm(e.for);
   const w = e.wants||{};
@@ -556,6 +634,14 @@ function rowAv(e){
   return `<span class="avs sm">${av(e.for,'sm')}</span>`;
 }
 function rowHtml({id,e,item}, i){
+  if(isHidden(id, e)){
+    const sp = e.surprise;
+    return `<li class="row surprise" style="animation-delay:${Math.min(i,8)*35}ms">
+      <button class="row-main" data-open="${id}">
+        <span class="thumb-art">${art({id:'sp-'+id, motif:'envelope', pal:'dawn'})}</span>
+        <span class="row-text"><span class="rt-title">Een verrassing van ${esc(nm(other(S.me)))}</span><span class="rt-sub"><span class="txt">Opent op ${esc(fmtDay(sp.openAt))}</span></span></span>
+      </button><span class="row-lock" aria-hidden="true">${I.gift}</span></li>`;
+  }
   const w = e.wants||{};
   const needMe = S.me && e.for==='both' && !e.lived && !w[S.me];
   const action = listEdit
@@ -651,7 +737,22 @@ function refreshAll(){
     if(getItem(sheet.dataset.id)) renderSheetState(sheet.dataset.id, false); else closeLayer(sheet);
   }
   updateBadge(false);
+  syncBrowse();
   hydrate();
+}
+let browseKey = null, browseTimer = null;
+function syncBrowse(){
+  const key = Object.keys(S.entries).sort().join('|');
+  if(key === browseKey) return;
+  browseKey = key;
+  clearTimeout(browseTimer);
+  browseTimer = setTimeout(()=>{
+    if(browse.hidden) return;
+    const y = browse.scrollTop;
+    renderBrowse();
+    browse.scrollTop = y;
+    hydrate();
+  }, 420);
 }
 function bump(id){
   document.querySelectorAll(`[data-tile="${id}"]`).forEach(t=>{ t.classList.remove('bump'); void t.offsetWidth; t.classList.add('bump'); });
@@ -666,15 +767,18 @@ function needMe(){
   else if(!S.me) openGate('claim');
   return true;
 }
-function addEntry(id, forWho, start, custom){
+function addEntry(id, forWho, start, custom, surprise){
   if(needMe()) return;
   const body = {for:forWho, addedBy:S.me, addedAt:Date.now(), lived:null, wants: forWho==='both' ? {[S.me]:true} : {}, updatedBy:S.me};
   if(custom) body.custom = custom;
+  // Een verrassing is een cadeau, daar hoeft de ander niets van goed te keuren.
+  if(surprise && surprise.openAt){ body.surprise = {by:S.me, openAt:surprise.openAt}; body.wants = {a:true, b:true}; }
   putEntry(id, body); bump(id);
   const done = ()=>updateBadge(true);
   if(start) fly(start, done); else done();
   const item = getItem(id);
-  toast(forWho==='both' ? `Toegevoegd voor jullie samen` : `Toegevoegd voor ${nm(forWho)}`, ()=>removeEntry(id));
+  toast(surprise && surprise.openAt ? `Verstopt tot ${fmtDay(surprise.openAt)}`
+    : (forWho==='both' ? `Toegevoegd voor jullie samen` : `Toegevoegd voor ${nm(forWho)}`), ()=>removeEntry(id));
   vibrate(12);
   return item;
 }
@@ -759,10 +863,11 @@ function forRow(id, current, cls){
   return `<div class="for-row" role="${current?'radiogroup':'group'}" aria-label="Voor wie">${opts.map(([k,l,a],i)=>`<button class="for-btn ${!current&&i===0?'primary':''} ${cls||''}" data-for="${k}" data-forid="${id}" ${current?`role="radio" aria-checked="${current===k}"`:''}>${a}<span class="t">${esc(l)}</span></button>`).join('')}</div>`;
 }
 function openSheet(id){
+  if(isHidden(id)) return openSurpriseSheet(id);
   const item = getItem(id); if(!item) return;
   const c = CAT[item.cat] || CAT.eigen;
   const r = rng(hash(id)+7);
-  const pick = DATA.filter(x=>x.cat===item.cat && x.id!==id).sort(()=>r()-.5).slice(0,4);
+  const pick = DATA.filter(x=>x.cat===item.cat && x.id!==id && !S.entries[x.id]).sort(()=>r()-.5).slice(0,4);
   sheet.dataset.id = id;
   sheet.innerHTML = `
     <div class="grabber"></div>
@@ -777,6 +882,7 @@ function openSheet(id){
           <div><dt>Waar</dt><dd>${esc(item.where)}</dd></div>
           <div><dt>Beste tijd</dt><dd>${esc(item.season)}</dd></div>
           <div><dt>Duur</dt><dd>${esc(item.time || 'Aan jullie')}</dd></div>
+          <div><dt>Moeite</dt><dd>${esc(EFFORTS[effortOf(item)])}</dd></div>
         </dl>
         <div id="sheetOwner"></div>
         <div id="sheetMemory"></div>
@@ -790,6 +896,30 @@ function openSheet(id){
   else openLayer(sheet);
   setTimeout(()=>{ const b=sheet.querySelector('[data-action="close"]'); b && b.focus({preventScroll:true}); }, 60);
 }
+function openSurpriseSheet(id){
+  const e = S.entries[id], sp = e && surpriseOf(e); if(!sp) return;
+  sheet.dataset.id = id;
+  sheet.innerHTML = `
+    <div class="grabber"></div>
+    <div class="sheet-top"><button class="icon-btn" data-action="close" aria-label="Sluiten">${I.close}</button></div>
+    <div class="sheet-scroll">
+      <div class="sheet-art">${art({id:'sp-'+id, motif:'envelope', pal:'dawn'}, 'animate')}</div>
+      <div class="sheet-body">
+        <div class="kicker"><span class="dot" style="background:var(--gold)"></span>Verrassing</div>
+        <h2>Een verrassing van ${esc(nm(other(S.me)))}</h2>
+        <p class="blurb">Wat het is blijft geheim tot de datum hieronder. Op die dag opent de kaart zichzelf en staat hij gewoon op jullie lijst.</p>
+        <dl class="facts">
+          <div><dt>Opent op</dt><dd>${esc(fmtDay(sp.openAt))}</dd></div>
+          <div><dt>Wachten</dt><dd>${esc(daysLeft(sp.openAt))}</dd></div>
+        </dl>
+      </div>
+    </div>
+    <div class="sheet-cta"><button class="btn soft block" data-action="close">Niet spieken</button></div>`;
+  if(sheet.classList.contains('show')) sheet.querySelector('.sheet-scroll').scrollTop = 0;
+  else openLayer(sheet);
+  hydrate();
+  setTimeout(()=>{ const b=sheet.querySelector('[data-action="close"]'); b && b.focus({preventScroll:true}); }, 60);
+}
 function renderSheetState(id, stampIn){
   const cta=$('#sheetCta'), slot=$('#stampSlot'), owner=$('#sheetOwner'); if(!cta) return;
   const it = getItem(id);
@@ -800,6 +930,14 @@ function renderSheetState(id, stampIn){
     [it.where, it.season, it.time || 'Aan jullie'].forEach((v,i)=>{ if(dds[i] && dds[i].textContent!==v) dds[i].textContent = v; });
   }
   const e = S.entries[id];
+  if(e && isPendingGift(id, e)){
+    owner.innerHTML = `<div class="owner-box gift-box"><p class="for-label">Verrassing</p><div class="wants"><span class="avs"><span class="av gift">${I.gift}</span></span><span>${esc(nm(other(S.me)))} ziet alleen een envelop. De kaart opent op ${esc(fmtDay(e.surprise.openAt))}.</span></div></div>`;
+    const mb0 = $('#sheetMemory'); if(mb0) mb0.innerHTML = '';
+    cta.className = 'sheet-cta';
+    cta.innerHTML = `<button class="btn soft" data-remove="${id}">Verwijderen</button><button class="btn gold" data-lived="${id}">Markeer als beleefd</button>`;
+    slot.innerHTML = '';
+    return;
+  }
   if(!e){
     owner.innerHTML = '';
     const mb = $('#sheetMemory'); if(mb) mb.innerHTML = '';
@@ -1044,7 +1182,8 @@ function openPicker(ctx){
   const opts = [
     ['both', pairAv(''), 'Samen', `Iets voor ${esc(nm('a'))} en ${esc(nm('b'))}`],
     [S.me, av(S.me), `Voor mij`, `Een eigen doel, ${esc(nm(other(S.me)))} moedigt aan`],
-    [other(S.me), av(other(S.me)), `Voor ${esc(nm(other(S.me)))}`, 'Een doel waar jij de supporter bent']
+    [other(S.me), av(other(S.me)), `Voor ${esc(nm(other(S.me)))}`, 'Een doel waar jij de supporter bent'],
+    ['surprise', `<span class="avs"><span class="av gift">${I.gift}</span></span>`, 'Verrassing', `Verborgen voor ${esc(nm(other(S.me)))} tot een datum`]
   ];
   pickerEl.innerHTML = `<div class="grabber"></div><div class="picker">
     <h2>Voor wie is dit?</h2><p>${esc(ctx.title)}</p>
@@ -1052,6 +1191,29 @@ function openPicker(ctx){
     <button class="btn soft cancel" data-action="closepicker">Annuleren</button></div>`;
   openLayer(pickerEl);
   setTimeout(()=>{ const b=pickerEl.querySelector('.pick-row'); b && b.focus({preventScroll:true}); }, 60);
+}
+
+function openSurpriseForm(ctx){
+  pickCtx = ctx;
+  const today = isoDate(Date.now());
+  pickerEl.innerHTML = `<div class="grabber"></div><div class="picker">
+    <h2>Verrassing</h2><p>${esc(ctx.title)}</p>
+    <p class="note">${esc(nm(other(S.me)))} ziet alleen een dichte envelop met de datum erop. Op die dag gaat de kaart vanzelf open.</p>
+    <label class="field">Opent op<input id="surpDate" type="date" min="${today}" value="${today}"></label>
+    <p class="who-err" id="pickErr" hidden></p>
+    <button class="btn primary block" data-action="savesurprise">Verstoppen tot die datum</button>
+    <button class="btn soft cancel" data-action="closepicker">Annuleren</button></div>`;
+  openLayer(pickerEl);
+  setTimeout(()=>{ const i=$('#surpDate'); i && i.focus({preventScroll:true}); }, 60);
+}
+function saveSurprise(){
+  const ctx = pickCtx; if(!ctx) return;
+  const iso = ($('#surpDate')||{}).value || '';
+  const t = fromIso(iso);
+  const err = $('#pickErr');
+  if(t===null){ if(err){ err.textContent='Kies een datum.'; err.hidden=false; } return; }
+  pickCtx = null; closeLayer(pickerEl);
+  setTimeout(()=>ctx.onPick('both', {openAt:iso}), 120);
 }
 
 /* ---------- Inloggen en profiel ---------- */
@@ -1208,6 +1370,83 @@ function pickCard(btn){
   }, 380);
 }
 
+/* ---------- Dobbel de dag ---------- */
+const DICE_F = {
+  effort: [['all','Alles'],['middag','Een middag'],['weekend','Een weekend'],['sparen','Jaar sparen']],
+  afstand:[['all','Alles'],['near','Dichtbij'],['far','Ver weg']],
+  seizoen:[['all','Alles'],['now','Kan nu']]
+};
+let diceF = {effort:'all', afstand:'all', seizoen:'all'};
+try{ const raw = lsGet('ooit-dobbel'); if(raw) diceF = Object.assign(diceF, JSON.parse(raw)); }catch(e){}
+function dicePool(){
+  const m = new Date().getMonth()+1;
+  return listItems().filter(({id,e,item})=>{
+    if(e.lived) return false;
+    if(isHidden(id, e)) return false;
+    if(diceF.effort!=='all' && effortOf(item)!==diceF.effort) return false;
+    if(diceF.afstand==='near' && !item.near) return false;
+    if(diceF.afstand==='far' && item.near) return false;
+    if(diceF.seizoen==='now' && !inSeason(item, m)) return false;
+    return true;
+  });
+}
+function diceChips(){
+  return Object.keys(DICE_F).map(k=>`<div class="dice-row"><span>${k==='effort'?'Moeite':(k==='afstand'?'Afstand':'Seizoen')}</span>
+    <div class="dice-chips">${DICE_F[k].map(([v,l])=>`<button class="dice-chip" data-dicef="${k}:${v}" aria-pressed="${diceF[k]===v}">${l}</button>`).join('')}</div></div>`).join('');
+}
+function openDice(){
+  if(needMe()) return;
+  diceView();
+  openLayer(dice);
+}
+function diceView(){
+  const pool = dicePool();
+  const n = pool.length;
+  dice.innerHTML = `<button class="icon-btn close" data-action="closedice" aria-label="Sluiten">${I.close}</button>
+    <h2>Dobbel de dag</h2><p class="sub">Eén kaart van jullie lijst, willekeurig gekozen.</p>
+    <div class="dice-filters">${diceChips()}</div>
+    <p class="dice-count">${n===0?'Geen kaart past bij deze filters':(n===1?'1 kaart past':`${n} kaarten passen`)}</p>
+    ${n ? `<button class="die" data-action="roll" aria-label="Dobbel">${diceFace(5)}</button>`
+        : `<p class="dice-empty">Zet een filter ruimer, of zet eerst iets op jullie lijst.</p><button class="btn soft small" data-action="closedice">Sluiten</button>`}`;
+  setTimeout(()=>{ const b=dice.querySelector('.die,.btn'); b && b.focus({preventScroll:true}); }, 60);
+}
+function diceFace(n){
+  const P = {1:[[50,50]],2:[[28,28],[72,72]],3:[[28,28],[50,50],[72,72]],
+    4:[[28,28],[72,28],[28,72],[72,72]],5:[[28,28],[72,28],[50,50],[28,72],[72,72]],
+    6:[[28,25],[72,25],[28,50],[72,50],[28,75],[72,75]]};
+  return `<svg viewBox="0 0 100 100" width="66" height="66" aria-hidden="true">${P[n].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="8.5" fill="currentColor"/>`).join('')}</svg>`;
+}
+function rollDice(){
+  const pool = dicePool();
+  if(!pool.length){ diceView(); return; }
+  const die = dice.querySelector('.die');
+  if(die){ die.classList.add('rolling'); vibrate([8,30,12]); }
+  let spins = 0;
+  const spin = setInterval(()=>{ const d = dice.querySelector('.die'); if(d) d.innerHTML = diceFace(1+Math.floor(Math.random()*6)); if(++spins>6) clearInterval(spin); }, 90);
+  setTimeout(()=>{
+    clearInterval(spin);
+    const x = pool[Math.floor(Math.random()*pool.length)];
+    const item = x.item;
+    dice.innerHTML = `<button class="icon-btn close" data-action="closedice" aria-label="Sluiten">${I.close}</button>
+      <h2>Vandaag dan maar</h2><p class="sub">Van jullie lijst, ${esc(EFFORTS[effortOf(item)].toLowerCase())}</p>
+      <div class="reveal"><div class="flipper" id="diceFlip">
+        <div class="face">${diceFaceCard()}</div>
+        <div class="face front">${art(item)}<div class="info"><h3>${esc(item.title)}</h3><p>${esc(item.where)}. ${esc(item.time)}</p></div></div>
+      </div></div>
+      <div class="reveal-actions" id="diceActions">
+        <button class="btn gold small" data-diceopen="${x.id}">Bekijken</button>
+        <button class="btn soft small" data-action="roll">Nog eens</button>
+        <button class="btn soft small" data-action="closedice">Sluiten</button>
+      </div>`;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const f = $('#diceFlip'); if(f) f.classList.add('flipped');
+      const a = dice.querySelector('.face.front .art'); if(a) a.classList.add('animate');
+      const ac = $('#diceActions'); if(ac) ac.classList.add('show');
+    }));
+  }, 700);
+}
+function diceFaceCard(){ return `<span class="wrap"><b>Ooit</b></span>`; }
+
 /* ---------- Eigen idee ---------- */
 const OWN_MOTIFS = ['sun','waves','peaks','bloom','road','circles','moon','stack'];
 function addOwn(title){
@@ -1215,9 +1454,9 @@ function addOwn(title){
   if(!title){ const i=$('#ownInput'); i && i.focus(); return; }
   const r = rng(hash(title));
   const custom = {title, motif:OWN_MOTIFS[Math.floor(r()*OWN_MOTIFS.length)], pal:PAL_KEYS[Math.floor(r()*PAL_KEYS.length)]};
-  openPicker({title, onPick:(who)=>{
+  openPicker({title, onPick:(who, sp)=>{
     const id = 'own-'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
-    addEntry(id, who, null, custom);
+    addEntry(id, who, null, custom, sp);
     query=''; $('#q').value=''; listView='todo'; listFor='all';
     setTab('mylist');
   }});
@@ -1242,11 +1481,13 @@ app.addEventListener('click', ev=>{
     const id = el.dataset.add;
     if(S.entries[id]){ openSheet(id); return; }
     const item = getItem(id); const start = relRect(el);
-    openPicker({title:item.title, onPick:(who)=>addEntry(id, who, start)});
+    openPicker({title:item.title, onPick:(who, sp)=>addEntry(id, who, start, null, sp)});
     return;
   }
   if((el = hit('[data-pickfor]'))){
-    const who = el.dataset.pickfor, ctx = pickCtx; pickCtx = null;
+    const who = el.dataset.pickfor;
+    if(who==='surprise'){ if(pickCtx) openSurpriseForm(pickCtx); return; }
+    const ctx = pickCtx; pickCtx = null;
     closeLayer(pickerEl);
     if(ctx && ctx.onPick) setTimeout(()=>ctx.onPick(who), 120);
     return;
@@ -1269,8 +1510,8 @@ app.addEventListener('click', ev=>{
     const id = el.dataset.drawadd;
     if(!S.entries[id] && !needMe()){
       const item = getItem(id), start = relRect(el), addBtn = el;
-      openPicker({title:item.title, onPick:(who)=>{
-        addEntry(id, who, start);
+      openPicker({title:item.title, onPick:(who, sp)=>{
+        addEntry(id, who, start, null, sp);
         addBtn.textContent='Staat op jullie lijst';
         addBtn.disabled = true;
       }});
@@ -1294,8 +1535,12 @@ app.addEventListener('click', ev=>{
     if(a==='draw'){ if(sheet.classList.contains('show')) closeLayer(sheet); openDraw(); }
     else if(a==='redraw') openDraw();
     else if(a==='closedraw') closeLayer(draw);
+    else if(a==='dice'){ if(sheet.classList.contains('show')) closeLayer(sheet); openDice(); }
+    else if(a==='closedice') closeLayer(dice);
+    else if(a==='roll') rollDice();
     else if(a==='close') closeLayer(sheet);
     else if(a==='closepicker'){ pickCtx=null; closeLayer(pickerEl); }
+    else if(a==='savesurprise') saveSurprise();
     else if(a==='closegate'){ if(!gateForced) closeLayer(gateEl); }
     else if(a==='login') doAuth(false, el);
     else if(a==='signup') doAuth(true, el);
@@ -1318,6 +1563,13 @@ app.addEventListener('click', ev=>{
     else if(a==='own') addOwn(($('#ownInput')||{}).value);
     return;
   }
+  if((el = hit('[data-dicef]'))){
+    const [k,v] = el.dataset.dicef.split(':');
+    diceF[k] = v; lsSet('ooit-dobbel', JSON.stringify(diceF));
+    diceView();
+    return;
+  }
+  if((el = hit('[data-diceopen]'))){ const id = el.dataset.diceopen; closeLayer(dice); setTimeout(()=>openSheet(id), 180); return; }
   if((el = hit('[data-open]'))){ openSheet(el.dataset.open); return; }
 });
 backdrop.addEventListener('click', ()=>{
@@ -1336,6 +1588,7 @@ document.addEventListener('keydown', ev=>{
     else if(gateEl.classList.contains('show')){ if(!gateForced) closeLayer(gateEl); }
     else if(pickerEl.classList.contains('show')){ pickCtx=null; closeLayer(pickerEl); }
     else if(draw.classList.contains('show')) closeLayer(draw);
+    else if(dice.classList.contains('show')) closeLayer(dice);
     else if(sheet.classList.contains('show')) closeLayer(sheet);
   }
   if(ev.key==='Enter' && ev.target && ev.target.id==='ownInput'){ ev.preventDefault(); addOwn(ev.target.value); }

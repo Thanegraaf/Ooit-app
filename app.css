@@ -277,6 +277,36 @@ svg{display:block}
 .reveal-actions.show{opacity:1;transform:none}
 .draw .btn.soft{background:rgba(255,255,255,.12);color:#fff}
 
+/* Moeite per kaart */
+.time .effort{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:2px 8px 2px 7px;border-radius:9px;background:var(--chip);font-size:11px;font-weight:700;letter-spacing:.01em}
+.time .effort::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.effort.e-middag{color:#2F9C74}
+.effort.e-weekend{color:#B8801F}
+.effort.e-sparen{color:#C2543E}
+
+/* Dobbel de dag */
+.dice .dice-filters{width:min(340px,100%);display:flex;flex-direction:column;gap:13px;margin:0 0 20px}
+.dice-row{display:flex;flex-direction:column;gap:7px}
+.dice-row > span{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:rgba(244,241,234,.5);font-weight:700}
+.dice-chips{display:flex;gap:7px;flex-wrap:wrap}
+.dice-chip{padding:7px 13px;border-radius:17px;background:rgba(255,255,255,.1);color:#F4F1EA;font-size:13px;font-weight:600;transition:background .2s,color .2s}
+.dice-chip[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}
+.dice-count{margin:0 0 18px;color:rgba(244,241,234,.66);font-size:14px;text-align:center}
+.dice-empty{margin:0 0 16px;color:rgba(244,241,234,.5);font-size:14px;text-align:center;max-width:260px}
+.die{width:104px;height:104px;border-radius:24px;background:#F4F1EA;color:#161A23;display:grid;place-items:center;box-shadow:0 16px 36px rgba(0,0,0,.4);transition:transform .2s var(--spring)}
+.die:active{transform:scale(.94)}
+.die.rolling{animation:roll .7s var(--ease)}
+@keyframes roll{0%{transform:rotate(0) scale(1)}35%{transform:rotate(190deg) scale(.84)}70%{transform:rotate(300deg) scale(1.06)}100%{transform:rotate(360deg) scale(1)}}
+
+/* Verrassing */
+.av.gift{display:grid;place-items:center;background:var(--gold-soft);color:var(--gold)}
+.row.surprise .rt-title{font-family:var(--display);font-weight:400}
+.row-lock{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:19px;background:var(--gold-soft);color:var(--gold)}
+.gift-box .wants{margin-top:10px}
+.picker .note{margin:0 0 16px;font-size:14px;line-height:1.5;color:var(--ink-2)}
+.picker .field{display:block;margin:0 0 14px;font-size:13px;font-weight:700;color:var(--ink-2)}
+.picker .field input{display:block;width:100%;margin-top:7px;height:48px;padding:0 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:500}
+
 @media (hover:none){.pick:hover{transform:none}}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}

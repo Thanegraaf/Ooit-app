@@ -56,9 +56,9 @@
       <span class="tab-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="8.5" rx="2"/><rect x="13.5" y="3.5" width="7" height="8.5" rx="2"/><rect x="3.5" y="15" width="7" height="5.5" rx="2"/><rect x="13.5" y="15" width="7" height="5.5" rx="2"/></svg></span>
       Ontdekken
     </button>
-    <button class="tab" data-action="draw">
-      <span class="tab-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M3 8h18M12 8v12"/><path d="M12 8c-1.5-3-5-4-5-1.5S10 8 12 8zM12 8c1.5-3 5-4 5-1.5S14 8 12 8z"/></svg></span>
-      Verras ons
+    <button class="tab" data-action="dice">
+      <span class="tab-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="8.6" cy="8.6" r="1.35" fill="currentColor" stroke="none"/><circle cx="15.4" cy="8.6" r="1.35" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="8.6" cy="15.4" r="1.35" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.35" fill="currentColor" stroke="none"/></svg></span>
+      Dobbel de dag
     </button>
     <button class="tab" data-tab="mylist">
       <span class="tab-icon" id="listIcon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 20s-7.5-4.4-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.6-7.5 10-7.5 10z"/></svg><span class="badge" id="badge" hidden>0</span></span>
@@ -75,6 +75,7 @@
   <section class="sheet" id="editor" role="dialog" aria-modal="true" aria-labelledby="edTitle" hidden style="z-index:58"></section>
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto" hidden></div>
   <section class="draw" id="draw" role="dialog" aria-modal="true" aria-label="Verras ons" hidden></section>
+  <section class="draw dice" id="dice" role="dialog" aria-modal="true" aria-label="Dobbel de dag" hidden></section>
   <section class="match" id="match" role="dialog" aria-modal="true" aria-label="Match" hidden></section>
 </div>
 
