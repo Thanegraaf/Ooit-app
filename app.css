@@ -426,7 +426,7 @@ svg{display:block}
 .q{padding:18px;border-radius:20px;background:var(--surface);border:.5px solid var(--line);margin:0 0 12px}
 .q h3{font-family:var(--display);font-weight:400;font-size:21px;line-height:1.15;margin:0 0 2px}
 .q .hint{margin:0;font-size:13px;color:var(--ink-3)}
-.again{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.again{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
 .again button{min-height:48px;padding:6px 8px;border-radius:14px;background:var(--chip);font-size:13px;font-weight:600;line-height:1.2;transition:transform .25s var(--spring),background .2s,color .2s}
 .again button:active{transform:scale(.95)}
 .again button[aria-checked="true"]{background:var(--ink);color:var(--app)}
@@ -455,7 +455,7 @@ svg{display:block}
 .mem-strip::-webkit-scrollbar{display:none}
 .mem-strip .ph{flex:none;width:112px;height:140px;aspect-ratio:auto}
 .voice{margin-top:14px;padding-top:14px;border-top:.5px solid var(--line);display:flex;gap:12px}
-.voice .word{font-family:var(--display);font-size:24px;line-height:1.1;margin:0 0 4px}
+.voice .word{font-family:var(--display);font-size:24px;line-height:1.15;margin:0 0 4px;overflow-wrap:anywhere}
 .voice p{margin:0;font-size:15px;line-height:1.5}
 .voice .again-tag{display:inline-block;margin-top:8px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:10px;background:var(--chip);color:var(--ink-2)}
 .mem-empty{margin:10px 0 0;font-size:14px;color:var(--ink-2)}

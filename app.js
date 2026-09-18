@@ -1020,7 +1020,7 @@ function resetEditor(){
 }
 
 /* ---------- Herinnering ---------- */
-const AGAIN = [['again','Meteen weer'],['maybe','Misschien ooit'],['once','Eén keer was genoeg']];
+const AGAIN = [['again','Meteen weer'],['maybe','Misschien ooit'],['once','Eén keer was genoeg'],['cant','Niet mogelijk']];
 const againLabel = v => (AGAIN.find(a=>a[0]===v)||[])[1] || '';
 let memId = null, memAgain = null, uploading = [];
 function memoryBox(id, e){
@@ -1056,15 +1056,15 @@ function openMemory(id, fresh){
       <p class="sub">${esc(it.title)}</p>
       <label class="field">Wanneer was het?<input type="date" id="mDate" value="${esc(date)}" max="${isoDate(Date.now())}"></label>
       <div class="q">
-        <h3>Het moment dat je nooit wilt vergeten</h3>
-        <p class="hint">Die ene seconde, geur of zin.</p>
+        <h3>Wat wil je hierover kwijt?</h3>
+        <p class="hint">Die ene seconde, die geur, die zin. Van één regel tot het hele verhaal.</p>
         <textarea id="mMoment" rows="3" maxlength="600" placeholder="Toen we...">${esc(mine.moment||'')}</textarea>
         ${partnerNote(m,'moment')}
       </div>
       <div class="q">
-        <h3>Deze ervaring in één woord</h3>
-        <p class="hint">Jullie zien straks elkaars woord.</p>
-        <input id="mWord" maxlength="30" placeholder="Bijvoorbeeld: ademloos" value="${esc(mine.word||'')}">
+        <h3>Deze ervaring in een woord of zin</h3>
+        <p class="hint">Jullie zien straks allebei wat de ander opschreef.</p>
+        <input id="mWord" maxlength="90" placeholder="Bijvoorbeeld: ademloos" value="${esc(mine.word||'')}">
         ${partnerNote(m,'word')}
       </div>
       <div class="q">
