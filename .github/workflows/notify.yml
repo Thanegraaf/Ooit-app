@@ -1,0 +1,39 @@
+# Stuurt de meldingen uit de wachtrij door naar de telefoons.
+# Draait elke tien minuten. GitHub loopt bij drukte wat achter,
+# reken op een melding binnen een half uur.
+name: Meldingen versturen
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notify
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: web-push installeren
+        run: npm install --no-save --no-audit --no-fund web-push@3
+
+      - name: Wachtrij leegmaken
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          PUSH_SECRET: ${{ secrets.PUSH_SECRET }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+        run: node .github/scripts/send-push.mjs

@@ -351,6 +351,93 @@ function isPendingGift(id, e){
   return !!(sp && S.me && sp.by === S.me && !surpriseDue(sp));
 }
 
+/* ---------- Meldingen op je telefoon ---------- */
+// De app zet een melding klaar in de wachtrij. Een geplande taak op GitHub
+// haalt die op en stuurt hem door naar de telefoon van de ander.
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+function b64ToBytes(b64){
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  const out = new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+async function pushSub(){
+  if(!pushSupported()) return null;
+  try{
+    // Wachten op de service worker kan blijven hangen als de app net
+    // geopend is. Na drie seconden gaat de app verder, anders blijft het
+    // profielscherm leeg.
+    const reg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise(r => setTimeout(() => r(null), 3000))
+    ]);
+    if(!reg) return null;
+    return await reg.pushManager.getSubscription();
+  }
+  catch(e){ return null; }
+}
+async function pushOn(){
+  if(!pushSupported()){ toast('Dit apparaat kan geen meldingen tonen.'); return false; }
+  if(!CFG.vapidPublicKey){ toast('Meldingen zijn nog niet ingesteld. Zie de README.'); return false; }
+  if(!sb || !session || !S.me){ needMe(); return false; }
+  let perm = Notification.permission;
+  if(perm === 'default') perm = await Notification.requestPermission();
+  if(perm !== 'granted'){
+    toast('Meldingen staan uit. Zet ze aan bij Instellingen, Ooit, Berichtgeving.');
+    return false;
+  }
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToBytes(CFG.vapidPublicKey)});
+    const j = sub.toJSON();
+    const {error} = await sb.from('push_subs').upsert({
+      endpoint: j.endpoint, slot: S.me, user_id: session.user.id,
+      p256dh: j.keys.p256dh, auth: j.keys.auth, seen_at: new Date().toISOString()
+    }, {onConflict:'endpoint'});
+    if(error) throw error;
+    toast('Meldingen staan aan');
+    return true;
+  }catch(err){
+    console.error(err);
+    toast('Meldingen aanzetten lukte niet. Probeer het later opnieuw.');
+    return false;
+  }
+}
+async function pushOff(){
+  try{
+    const sub = await pushSub();
+    if(sub){
+      const ep = sub.endpoint;
+      await sub.unsubscribe().catch(()=>{});
+      if(sb && session) await sb.from('push_subs').delete().eq('endpoint', ep);
+    }
+    toast('Meldingen staan uit op dit apparaat');
+  }catch(err){ console.error(err); }
+}
+// Zet een melding klaar voor de ander. Stilletjes overslaan als het misgaat,
+// meldingen zijn nooit belangrijker dan de lijst zelf.
+function notify(title, body, opts){
+  if(!sb || !session || !S.me) return;
+  const o = opts || {};
+  const row = {slot: o.slot || other(S.me), title: String(title).slice(0,120), body: String(body||'').slice(0,300)};
+  if(o.tag) row.tag = o.tag;
+  if(o.dedupe) row.dedupe = o.dedupe;
+  if(o.at) row.send_after = new Date(o.at).toISOString();
+  Promise.resolve(sb.from('notify_queue').upsert(row, {onConflict:'dedupe'})).catch(err=>console.error(err));
+}
+function unnotify(dedupe){
+  if(!sb || !session) return;
+  Promise.resolve(sb.from('notify_queue').delete().eq('dedupe', dedupe).is('sent_at', null)).catch(err=>console.error(err));
+}
+// Een verrassing meldt zichzelf op de ochtend van de dag dat hij opengaat.
+function giftAt(iso){
+  const t = fromIso(iso); if(t===null) return Date.now();
+  const d = new Date(t); d.setHours(8,0,0,0);
+  return d.getTime();
+}
+
 /* ---------- Supabase ---------- */
 const CFG = window.OOIT_CONFIG || {};
 let sb = null, session = null, members = [], channel = null;
@@ -389,6 +476,7 @@ function patchEntry(id, patch){
   enqueue(id, ()=>sb.rpc('patch_entry', {p_id:id, p_patch:patch}));
 }
 function removeEntry(id){
+  if(isPendingGift(id)) unnotify('gift:'+id);
   delete S.entries[id]; refreshAll();
   enqueue(id, ()=>sb.from('entries').delete().eq('id', id));
 }
@@ -777,6 +865,16 @@ function addEntry(id, forWho, start, custom, surprise){
   const done = ()=>updateBadge(true);
   if(start) fly(start, done); else done();
   const item = getItem(id);
+  if(surprise && surprise.openAt){
+    notify('Er ligt een verrassing voor je klaar', 'Open de app om te kijken wat het is.',
+      {tag:'gift-'+id, dedupe:'gift:'+id, at:giftAt(surprise.openAt)});
+  } else if(forWho==='both'){
+    notify(`${nm(S.me)} wil hier iets mee`, `${item?item.title:'Een nieuwe ervaring'}. Keur je het goed?`, {tag:'add-'+id});
+  } else if(forWho===other(S.me)){
+    notify(`${nm(S.me)} zette een doel voor je klaar`, item?item.title:'Een nieuwe ervaring', {tag:'add-'+id});
+  } else {
+    notify(`${nm(S.me)} zette iets op jullie lijst`, item?item.title:'Een nieuwe ervaring', {tag:'add-'+id});
+  }
   toast(surprise && surprise.openAt ? `Verstopt tot ${fmtDay(surprise.openAt)}`
     : (forWho==='both' ? `Toegevoegd voor jullie samen` : `Toegevoegd voor ${nm(forWho)}`), ()=>removeEntry(id));
   vibrate(12);
@@ -789,7 +887,13 @@ function wantToo(id, start){
   if(e.for!=='both') patch.for = 'both';
   patchEntry(id, patch); bump(id);
   const w = S.entries[id].wants||{};
-  if(w.a && w.b){ if(start) burst(start); setTimeout(()=>showMatch(id), 250); vibrate([10,40,14]); }
+  if(w.a && w.b){
+    if(start) burst(start);
+    setTimeout(()=>showMatch(id), 250);
+    vibrate([10,40,14]);
+    const it = getItem(id);
+    notify('Match', `${nm(S.me)} wil dit ook: ${it?it.title:'jullie ervaring'}`, {tag:'match-'+id});
+  }
   else toast('Genoteerd');
 }
 function setFor(id, who){
@@ -805,7 +909,14 @@ function toggleLived(id, start){
   const e = S.entries[id]; if(!e) return;
   const lived = e.lived ? null : Date.now();
   patchEntry(id, {lived, updatedBy:S.me});
-  if(lived){ if(start) burst(start); vibrate([10,40,14]); renderSheetState(id, true); setTimeout(()=>openMemory(id, true), 420); }
+  if(lived){
+    if(start) burst(start);
+    vibrate([10,40,14]);
+    const it = getItem(id);
+    notify(`${nm(S.me)} streepte iets af`, `${it?it.title:'Een ervaring'} staat nu op beleefd.`, {tag:'lived-'+id});
+    renderSheetState(id, true);
+    setTimeout(()=>openMemory(id, true), 420);
+  }
   else toast('Terug naar de lijst');
 }
 function removeWithUndo(id){
@@ -1257,12 +1368,33 @@ function openGate(mode, force){
         <p class="who-err" id="gErr" hidden></p>
         <button class="btn soft block" type="submit" data-action="saveprofile">Naam opslaan</button>
       </form>
+      <div class="push-row" id="pushRow"></div>
       <button class="btn soft block" style="margin-top:10px" data-action="logout">Uitloggen</button>`;
   }
   h += `</div>`;
   gateEl.innerHTML = h;
+  if(mode==='profile') renderPushRow();
   openLayer(gateEl);
   setTimeout(()=>{ const i = gateEl.querySelector('input'); if(i && !i.value) i.focus({preventScroll:true}); }, 350);
+}
+async function renderPushRow(){
+  const box = $('#pushRow'); if(!box) return;
+  if(!pushSupported()){
+    box.innerHTML = `<p class="push-note">Meldingen werken alleen in de app op je beginscherm. Zet hem daar neer via Deel, Zet op beginscherm.</p>`;
+    return;
+  }
+  if(Notification.permission === 'denied'){
+    box.innerHTML = `<p class="push-note">Meldingen zijn geblokkeerd. Zet ze aan bij Instellingen, Ooit, Berichtgeving.</p>`;
+    return;
+  }
+  // Eerst tekenen, dan pas navragen of dit apparaat al aangemeld is. Zo staat
+  // er meteen iets op het scherm.
+  const draw = aan => { box.innerHTML = aan
+    ? `<p class="push-note">Meldingen staan aan op dit apparaat.</p><button class="btn soft block" data-action="pushoff">Meldingen uitzetten</button>`
+    : `<p class="push-note">Krijg een melding als ${esc(nm(other(S.me)))} iets toevoegt, goedkeurt of afstreept.</p><button class="btn soft block" data-action="pushon">Meldingen aanzetten</button>`; };
+  draw(false);
+  const sub = await pushSub();
+  if(sub && document.body.contains(box)) draw(true);
 }
 function gateError(msg){ const e = $('#gErr'); if(e){ e.textContent = msg; e.hidden = false; } }
 // Supabase kent geen login op gebruikersnaam, alleen op e-mailadres. Daarom
@@ -1541,6 +1673,8 @@ app.addEventListener('click', ev=>{
     else if(a==='close') closeLayer(sheet);
     else if(a==='closepicker'){ pickCtx=null; closeLayer(pickerEl); }
     else if(a==='savesurprise') saveSurprise();
+    else if(a==='pushon') pushOn().then(renderPushRow);
+    else if(a==='pushoff') pushOff().then(renderPushRow);
     else if(a==='closegate'){ if(!gateForced) closeLayer(gateEl); }
     else if(a==='login') doAuth(false, el);
     else if(a==='signup') doAuth(true, el);

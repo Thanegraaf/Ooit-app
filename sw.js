@@ -27,6 +27,33 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Meldingen: de GitHub-taak stuurt hier een bericht naartoe.
+self.addEventListener('push', event => {
+  let d = { title: 'Ooit', body: '', tag: 'ooit' };
+  try { d = Object.assign(d, event.data ? event.data.json() : {}); }
+  catch (e) { if (event.data) d.body = event.data.text(); }
+  event.waitUntil(self.registration.showNotification(d.title, {
+    body: d.body,
+    tag: d.tag || 'ooit',
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    data: { url: './' }
+  }));
+});
+
+// Tik op de melding: open de app, of spring naar het venster dat al open staat.
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if (c.url.startsWith(self.registration.scope) && 'focus' in c) return c.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow('./');
+    })
+  );
+});
+
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;

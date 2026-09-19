@@ -307,6 +307,10 @@ svg{display:block}
 .picker .field{display:block;margin:0 0 14px;font-size:13px;font-weight:700;color:var(--ink-2)}
 .picker .field input{display:block;width:100%;margin-top:7px;height:48px;padding:0 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:500}
 
+/* Meldingen in het profiel */
+.push-row{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.push-note{margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--ink-2)}
+
 @media (hover:none){.pick:hover{transform:none}}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}

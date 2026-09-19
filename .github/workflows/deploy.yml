@@ -35,6 +35,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
         run: |
           set -euo pipefail
           # Haalt onzichtbare tekens weg die vaak per ongeluk meekomen bij
@@ -44,6 +45,7 @@ jobs:
           trim(){ printf '%s' "$1" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
           SUPABASE_URL="$(trim "${SUPABASE_URL:-}")"
           SUPABASE_KEY="$(trim "${SUPABASE_KEY:-}")"
+          VAPID_PUBLIC_KEY="$(trim "${VAPID_PUBLIC_KEY:-}")"
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
             echo "::warning title=Supabase nog niet gekoppeld::Maak de secrets SUPABASE_URL en SUPABASE_ANON_KEY aan onder Settings > Secrets and variables > Actions. De app toont nu het scherm 'Nog even koppelen'."
             exit 0
@@ -53,8 +55,8 @@ jobs:
               echo "::error title=Verkeerde sleutel::SUPABASE_ANON_KEY lijkt een secret key of service_role key. Die hoort nooit in een app. Gebruik de publishable key (sb_publishable_...) of de legacy anon key."
               exit 1 ;;
           esac
-          body=$(jq -cn --arg u "$SUPABASE_URL" --arg k "$SUPABASE_KEY" \
-            '{supabaseUrl: ($u | sub("/+$"; "")), supabaseAnonKey: $k}')
+          body=$(jq -cn --arg u "$SUPABASE_URL" --arg k "$SUPABASE_KEY" --arg v "$VAPID_PUBLIC_KEY" \
+            '{supabaseUrl: ($u | sub("/+$"; "")), supabaseAnonKey: $k, vapidPublicKey: $v}')
           printf 'window.OOIT_CONFIG = %s;\n' "$body" > config.js
           echo "config.js gevuld met de Supabase-gegevens uit de secrets."
 
@@ -70,6 +72,8 @@ jobs:
             catch(e) { console.log("URL is NIET geldig volgens de browserregels: " + e.message); }
             console.log("KEY begint met sb_publishable_: " + k.startsWith("sb_publishable_"));
             console.log("KEY ziet eruit als een JWT (drie delen met punten): " + (k.split(".").length === 3));
+            const v = process.env.VAPID_PUBLIC_KEY || "";
+            console.log("VAPID-sleutel ingevuld: " + (v.length > 0) + (v ? ", lengte " + v.length : " (meldingen blijven uit)"));
           '
 
       - name: Cache-versie op deze commit zetten
