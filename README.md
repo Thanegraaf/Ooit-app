@@ -14,6 +14,8 @@ Een web-app voor jullie twee. Eén gedeelde lijst met ervaringen, live bijgewerk
 | Cache-versie ophogen bij updates | Doet de deploy zelf, op basis van de commit |
 | Supabase wakker houden (`.github/workflows/keepalive.yml`) | Elke dag om 05:17 UTC |
 | Meldingen op je telefoon (`supabase/push.sql`, `.github/workflows/notify.yml`) | Klaar om aan te zetten, zie stap 8 |
+| Eigen kaarten en swipen (`supabase/swipe-en-kaarten.sql`) | Klaar om te plakken, zie stap 9 |
+| Onze kaart en Ooit Wrapped | Werken zonder extra stappen |
 
 Je hoeft `config.js` en `sw.js` dus niet meer met de hand aan te passen.
 
@@ -149,6 +151,38 @@ De app zet de melding in een wachtrij. De workflow **Meldingen versturen** leegt
 
 Wil je meldingen uitzetten, dan tik je in hetzelfde scherm op **Meldingen uitzetten**. Wil je ze voor iedereen stoppen, zet dan de workflow **Meldingen versturen** uit onder **Actions**.
 
+### 9. Eigen kaarten en swipen aanzetten
+
+Zonder deze stap werkt de rest van de app gewoon. Alleen eigen kaarten in Ontdekken en swipen blijven uit.
+
+1. Open in Supabase de **SQL Editor** en klik op **New query**.
+2. Plak de volledige inhoud van `supabase/swipe-en-kaarten.sql`.
+3. Klik op **Run**. Onderin hoort **Success** te staan.
+
+Je kunt het veilig opnieuw uitvoeren.
+
+Wat het doet:
+
+| Onderdeel | Uitleg |
+|---|---|
+| Tabel `cards` | De eigen kaarten die jullie in Ontdekken maken. Jullie kunnen ze allebei zien, aanpassen en verwijderen. |
+| Tabel `swipes` | Wie welke kaart naar links of rechts swipete. Je kunt alleen je eigen swipes lezen, nooit die van de ander. |
+| Functie `swipe` | Slaat een swipe op. Swipen jullie allebei naar rechts, dan zet de database de ervaring als Samen op jullie lijst. |
+
+## Wat er in de app zit
+
+| Onderdeel | Waar | Hoe het werkt |
+|---|---|---|
+| Swipen | Ontdekken, kaartjesknop rechtsboven | Rechts is wil ik, links is niet voor mij. Swipen jullie allebei rechts, dan volgt het matchscherm en staat de ervaring als Samen op de lijst. Wat de ander swipet blijft geheim. Voorstellen van de ander staan bovenaan de stapel. Rechts is goedkeuren, links is weigeren. |
+| Dobbel de dag | Ontdekken, dobbelsteen rechtsboven | Eén willekeurige kaart van jullie lijst, met filters. |
+| Eigen kaart | Ontdekken, plank Jullie eigen kaarten | Een idee dat niet in de catalogus staat. De kaart komt in Ontdekken en een van jullie kan hem later kiezen. |
+| Onze kaart | Tabblad Kaart | Grijs is te doen, goud is beleefd. Tik op een goud puntje voor de foto. Ervaringen zonder vaste plek kun je zelf op de kaart zetten, ook via "Waar was het?" in de herinnering. |
+| Ooit Wrapped | Onze lijst, vanaf 1 december | Een jaaroverzicht in schermen. Elk scherm kun je bewaren of delen. Oudere jaren staan onderaan Beleefd. |
+
+Wil je Wrapped nu al bekijken, open dan de app met `?wrapped=2026` achter de link, bijvoorbeeld `https://thanegraaf.github.io/Ooit-app/?wrapped=2026`. Dat werkt in een browser waarin je bent ingelogd. Op 1 december om 08:00 krijgen jullie allebei een melding, als meldingen aanstaan.
+
+De kaart gebruikt Leaflet met kaarttegels van CARTO, op basis van OpenStreetMap. Voor een app voor twee personen is dat gratis.
+
 ## Updates uitbrengen
 
 Pas de bestanden aan en push naar de standaardbranch. De rest gaat vanzelf. De deploy zet een nieuwe cache-versie in `sw.js`, dus je telefoon haalt de nieuwe versie op bij de volgende keer openen.
@@ -170,6 +204,10 @@ GitHub zet geplande taken in een publieke repository uit na 60 dagen zonder acti
 | Foto's laden niet | Controleer of stap 3 volledig is uitgevoerd. De bucket `photos` moet bestaan. |
 | De deploy faalt op "Verkeerde sleutel" | In `SUPABASE_ANON_KEY` staat een secret key of service_role key. Vervang hem door de publishable key. |
 | De deploy faalt op "Get Pages site failed" | Pages staat nog uit. Zet in **Settings > Pages** de bron op **GitHub Actions** en start de workflow opnieuw. |
+
+### Swipen of eigen kaarten werken niet
+
+Zie je "De database mist nog een onderdeel", voer dan stap 9 uit. Zie je een eigen kaart niet bij de ander, laat die de app dan een keer sluiten en opnieuw openen.
 
 ### Ik krijg geen meldingen
 

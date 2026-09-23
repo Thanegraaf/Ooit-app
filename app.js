@@ -134,6 +134,32 @@ const DATA = [
   X('stratos','durven','De kromming van de aarde zien vanaf de rand van de ruimte','Een stratosfeerballon','Eén dag',1,'Hele jaar','Met een ballon naar ruim dertig kilometer hoogte. Daar is de lucht zwart en zie je de aarde bol worden.','balloon','eclipse',{rare:true,effort:'sparen'})
 ];
 
+/* ---------- Plekken op de kaart ---------- */
+// Alleen kaarten met één vaste plek. "In de buurt" of "Zuid-Spanje of Luxor"
+// krijgen geen punt. Daar kiezen jullie zelf de plek.
+const LL = {
+  'glacier-express':[46.63,8.59], 'cappadocia':[38.643,34.828], 'ryokan':[35.625,134.806],
+  'lofoten':[67.932,13.089], 'road-trip':[57.12,-4.71], 'petra':[30.3285,35.4444],
+  'aurora':[69.649,18.955], 'dark-sky':[53.366,6.217], 'wadlopen':[53.402,6.45],
+  'bio-bay':[18.098,-65.443], 'sakura':[35.027,135.7944], 'migration':[-1.406,35.008],
+  'omakase':[35.676,139.65], 'vendange':[47.025,4.837], 'pasta':[44.494,11.343],
+  'night-market':[25.0507,121.5776], 'skydive':[53.115,4.834], 'nieuwjaarsduik':[52.113,4.279],
+  'surf':[38.963,-9.417], 'elfsteden':[53.201,5.799], 'camino':[42.88,-8.545],
+  'kilimanjaro':[-3.0674,37.3556], 'marathon':[51.924,4.478], 'westcoast':[36.27,-121.81],
+  'ice-hotel':[67.849,20.594], 'great-barrier':[-18.29,147.7], 'inca-trail':[-13.163,-72.545],
+  'sahara':[31.08,-4.013], 'everest-bc':[28.002,86.853], 'orca-kayak':[68.78,15.42],
+  'antarctica':[-64.82,-62.86], 'iceland-ring':[64.96,-19.02], 'midnight-sun':[71.169,25.783],
+  'uyuni':[-20.134,-67.489], 'fjord-kayak':[60.878,6.844]
+};
+DATA.forEach(x=>{ if(LL[x.id]) x.ll = LL[x.id]; });
+function validLL(v){
+  if(Array.isArray(v) && v.length===2){
+    const a = Number(v[0]), b = Number(v[1]);
+    if(isFinite(a) && isFinite(b) && Math.abs(a)<=90 && Math.abs(b)<=180) return [a, b];
+  }
+  return null;
+}
+
 /* ---------- Artwork ---------- */
 let uid = 0;
 function hash(s){ let h=2166136261; for(const c of s){ h^=c.charCodeAt(0); h=Math.imul(h,16777619);} return h>>>0; }
@@ -270,6 +296,10 @@ const I = {
   plus:'<svg class="i-plus" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   check:'<svg class="i-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   close:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  pin:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+  heart:'<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 20.5s-8-4.7-8-10.6A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8 2.9c0 5.9-8 10.6-8 10.6z"/></svg>',
+  undo:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7 4.5 11.5 9 16"/><path d="M5 11.5h9a5.5 5.5 0 0 1 0 11h-2"/></svg>',
+  share:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/><path d="M5 12v6.5A2 2 0 0 0 7 20.5h10a2 2 0 0 0 2-2V12"/></svg>',
   gift:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16v9H4z"/><path d="M3 7.5h18V11H3z"/><path d="M12 7.5V20"/><path d="M12 7.5S10.5 4 8.2 4a2.1 2.1 0 0 0 0 3.5zM12 7.5s1.5-3.5 3.8-3.5a2.1 2.1 0 0 1 0 3.5z"/></svg>'
 };
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -293,12 +323,24 @@ function pairAv(size, wants){
 }
 
 const EDIT_KEYS = ['title','where','season','time','blurb'];
+// Eigen kaarten uit Ontdekken. Ze staan in de tabel cards tot iemand ze kiest.
+const CARDS = {};
+let cardsLoaded = false;
+function customItem(id, c, isCard){
+  return {id, cat: CAT[c.cat] ? c.cat : 'eigen', title: c.title || 'Eigen idee', where: c.where || 'Eigen idee',
+    time: c.time || '', days: 1, season: c.season || 'Wanneer jullie willen',
+    blurb: c.blurb || 'Dit idee hebben jullie zelf toegevoegd. Kies wanneer, waar en hoe.',
+    motif: c.motif || 'sun', pal: c.pal || 'dawn', effort: c.effort, ll: validLL(c.ll), card: !!isCard, by: c.by};
+}
 function baseItem(id){
   const d = DATA.find(x=>x.id===id); if(d) return d;
+  if(CARDS[id]) return customItem(id, CARDS[id], true);
   const e = S.entries[id];
-  if(e && e.custom) return {id, cat:'eigen', title:e.custom.title, where:'Eigen idee', time:'', days:1, season:'Wanneer jullie willen', blurb:'Dit idee hebben jullie zelf toegevoegd. Kies wanneer, waar en hoe.', motif:e.custom.motif, pal:e.custom.pal};
+  if(e && e.custom) return customItem(id, e.custom, false);
   return null;
 }
+const cardList = () => Object.keys(CARDS).map(baseItem).filter(Boolean).sort((a,b)=>((CARDS[b.id].at||0)-(CARDS[a.id].at||0)));
+const openOwnCards = () => cardList().filter(x=>!S.entries[x.id]);
 function getItem(id){
   const b = baseItem(id); if(!b) return null;
   const e = S.entries[id];
@@ -509,7 +551,9 @@ async function fetchEntries(){
     const next = {};
     (data||[]).forEach(r=>{ next[r.id] = r.data; });
     if(S.listReady) partnerChanges(S.entries, next);
+    const first = !S.listReady || S.mode==='broken';
     S.entries = next; S.listReady = true;
+    if(first) setTimeout(afterFirstLoad, 50);
     if(S.mode==='broken') S.mode = 'ready';
     refreshAll();
   }catch(err){
@@ -525,7 +569,8 @@ function partnerChanges(prev, next){
     if(!n) continue;
     const item = getItem(id); if(!item) continue;
     if(!p && n.addedBy && n.addedBy!==S.me){
-      if(isHidden(id, n)) toast(`${nm(n.addedBy)} heeft een verrassing voor je`);
+      if(n.via==='swipe') showMatch(id);
+      else if(isHidden(id, n)) toast(`${nm(n.addedBy)} heeft een verrassing voor je`);
       else toast(`${nm(n.addedBy)} voegde \u201c${item.title}\u201d toe`);
     } else if(p && n.updatedBy && n.updatedBy!==S.me){
       const was = p.wants && p.wants.a && p.wants.b, now = n.wants && n.wants.a && n.wants.b;
@@ -534,16 +579,38 @@ function partnerChanges(prev, next){
     }
   }
 }
+let cardsTimer = null;
+function scheduleCards(ms){ clearTimeout(cardsTimer); cardsTimer = setTimeout(fetchCards, ms==null ? 300 : ms); }
+async function fetchCards(){
+  if(!sb || !session || !S.me) return;
+  try{
+    await Promise.all(Object.keys(queues).filter(k=>k.startsWith('card:')).map(k=>queues[k]));
+    const {data, error} = await sb.from('cards').select('id,data');
+    if(error) throw error;
+    const next = {};
+    (data||[]).forEach(r=>{ if(r.data && r.data.title) next[r.id] = r.data; });
+    const fresh = cardsLoaded ? Object.keys(next).filter(id=>!CARDS[id] && next[id].by && next[id].by!==S.me) : [];
+    Object.keys(CARDS).forEach(k=>{ delete CARDS[k]; });
+    Object.assign(CARDS, next);
+    cardsLoaded = true;
+    if(fresh.length) toast(`${nm(next[fresh[0]].by)} maakte een nieuwe kaart: \u201c${next[fresh[0]].title}\u201d`);
+    refreshAll();
+  }catch(err){
+    // Zonder de tabel cards werkt de rest van de app gewoon door.
+    console.error(err);
+  }
+}
 function subscribe(){
   if(channel) sb.removeChannel(channel);
   channel = sb.channel('ooit-live')
     .on('postgres_changes', {event:'*', schema:'public', table:'entries'}, ()=>scheduleRefetch(300))
+    .on('postgres_changes', {event:'*', schema:'public', table:'cards'}, ()=>scheduleCards(300))
     .on('postgres_changes', {event:'*', schema:'public', table:'members'}, ()=>{ loadMembers().then(refreshAll).catch(()=>{}); })
     .subscribe();
 }
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState==='visible' && sb && S.me){
-    scheduleRefetch(0);
+    scheduleRefetch(0); scheduleCards(0);
     loadMembers().then(refreshAll).catch(()=>{});
   }
 });
@@ -595,15 +662,16 @@ async function afterLogin(){
   S.mode = 'ready';
   if(gateEl.classList.contains('show')) closeLayer(gateEl);
   gateForced = false;
-  refreshAll(); subscribe(); fetchEntries();
+  refreshAll(); subscribe(); fetchEntries(); fetchCards();
 }
 
 /* ---------- Elementen ---------- */
 const app = $('#app'), browse = $('#browse'), mylist = $('#mylist');
 const content = $('#browseContent'), listContent = $('#listContent');
-const sheet = $('#sheet'), draw = $('#draw'), dice = $('#dice'), backdrop = $('#backdrop');
+const sheet = $('#sheet'), dice = $('#dice'), backdrop = $('#backdrop');
 const pickerEl = $('#picker'), gateEl = $('#who'), matchEl = $('#match');
 const memoryEl = $('#memory'), editorEl = $('#editor'), lightbox = $('#lightbox');
+const mapScreen = $('#map'), swipeEl = $('#swipe'), placeEl = $('#place'), wrEl = $('#wrapped');
 let cat = 'all', query = '', listView = 'todo', listFor = 'all', listEdit = false, lastFocus = null;
 let gateForced = false, gateMode = 'login';
 
@@ -622,6 +690,7 @@ function badges(item){
       }
     } else b = `<span class="pill ghost">Voor ${esc(nm(e.for))}</span>`;
   }
+  else if(item.card) b = `<span class="pill ghost">${item.by && S.names[item.by] ? 'Van '+esc(nm(item.by)) : 'Eigen kaart'}</span>`;
   else if(item.rare) b = '<span class="pill">Zeldzaam</span>';
   else if(item.near) b = '<span class="pill ghost">Dichtbij huis</span>';
   return `<div class="badges">${b}</div>`;
@@ -641,7 +710,7 @@ function tile(item){
 
 /* ---------- Ontdekken ---------- */
 function renderChips(){
-  const list = [{id:'all',short:'Alles'}].concat(CATS.filter(c=>c.id!=='eigen'));
+  const list = [{id:'all',short:'Alles'}].concat(CATS.filter(c=>c.id!=='eigen' || openOwnCards().length));
   $('#chips').innerHTML = list.map(c=>`<button class="chip" role="tab" data-cat="${c.id}" aria-selected="${cat===c.id}">${c.color?`<span class="dot" style="background:${c.color}"></span>`:''}${c.short}</button>`).join('');
 }
 function matches(item){
@@ -654,38 +723,38 @@ function shelf(title, sub, items, catId){
     <div class="shelf">${items.map(tile).join('')}</div></section>`;
 }
 const openCards = () => DATA.filter(x=>!S.entries[x.id]);
+function addCardTile(prefill){
+  return `<article class="tile add-tile"><button class="add-card" data-newcard="${esc(prefill||'')}"><span class="ac-plus">${I.plus}</span><strong>Eigen kaart maken</strong><small>Een idee dat hier nog niet tussen staat</small></button></article>`;
+}
+function ownShelf(){
+  const own = openOwnCards();
+  return `<section class="section" id="ownShelf"><div class="section-head"><div><h2>Jullie eigen kaarten</h2><p>${own.length ? 'Door jullie zelf bedacht. Kies er een zodra jullie eraan toe zijn.' : 'Staat jullie idee er niet tussen? Maak er een kaart van. Een van jullie kan hem daarna kiezen.'}</p></div>${own.length?`<span class="count">${own.length}</span>`:''}</div>
+    <div class="shelf">${addCardTile()}${own.map(tile).join('')}</div></section>`;
+}
 function renderBrowse(){
   renderChips();
   let h = '';
   const open = openCards();
+  const own = openOwnCards();
   if(query){
-    const res = open.map(x=>getItem(x.id)).filter(matches);
+    const res = open.map(x=>getItem(x.id)).concat(own).filter(matches);
     h += `<div class="section"><div class="section-head"><div><h2>Resultaten</h2></div><span class="count">${res.length} gevonden</span></div>`;
     if(res.length) h += `<div class="grid">${res.map(tile).join('')}</div>`;
-    else h += `<div class="empty"><h3>Niets gevonden voor \u201c${esc(query)}\u201d</h3><p>Misschien hoort het toch op jullie lijst. Voeg het toe als eigen idee.</p><button class="btn primary" data-own="${esc(query)}">\u201c${esc(query.slice(0,26))}\u201d toevoegen</button></div>`;
+    else h += `<div class="empty"><h3>Niets gevonden voor “${esc(query)}”</h3><p>Staat jullie idee er niet tussen? Maak er een eigen kaart van. Die komt hier in Ontdekken te staan.</p><button class="btn primary" data-newcard="${esc(query)}">Kaart maken voor “${esc(query.slice(0,26))}”</button></div>`;
     h += `</div>`;
   } else if(cat==='all'){
     h += waitingShelf();
-    const top = open.find(x=>x.featured) || open.find(x=>x.rare) || open[0];
-    if(top){
-      const feat = getItem(top.id);
-      h += `<article class="hero" data-open="${feat.id}" data-tile="${feat.id}">
-        ${art(feat)}
-        <div class="hero-body">
-          <div>${feat.rare?'<span class="pill">Zeldzaam</span>':''}<h3>${esc(feat.title)}</h3><p>Beste tijd: ${esc(feat.season)}</p></div>
-          ${addBtn(feat)}
-        </div></article>`;
-    }
+    h += ownShelf();
     h += shelf('Dichtbij huis','Grote momenten binnen bereik, in Nederland of met de trein.', open.filter(x=>x.near).map(x=>getItem(x.id)));
-    h += shelf('Eén keer in je leven','Zeldzame kansen. Plan deze op tijd.', open.filter(x=>x.rare && x!==top).map(x=>getItem(x.id)));
+    h += shelf('Eén keer in je leven','Zeldzame kansen. Plan deze op tijd.', open.filter(x=>x.rare).map(x=>getItem(x.id)));
     CATS.filter(c=>c.id!=='eigen').forEach(c=>{ h += shelf(c.name, c.blurb, open.filter(x=>x.cat===c.id).map(x=>getItem(x.id)), c.id); });
-    if(!open.length) h += `<div class="empty"><div class="empty-art">${art({id:'alldone',motif:'circles',pal:'matcha'})}</div><h3>Alles staat al op jullie lijst</h3><p>Elke kaart uit de catalogus hebben jullie gekozen. Verwijder er een van jullie lijst en hij komt hier vanzelf terug.</p><button class="btn primary" data-tab="mylist">Naar onze lijst</button></div>`;
+    if(!open.length && !own.length) h += `<div class="empty"><div class="empty-art">${art({id:'alldone',motif:'circles',pal:'matcha'})}</div><h3>Alles staat al op jullie lijst</h3><p>Elke kaart uit de catalogus hebben jullie gekozen. Verwijder er een van jullie lijst en hij komt hier vanzelf terug. Of maak een eigen kaart.</p><button class="btn primary" data-tab="mylist">Naar onze lijst</button></div>`;
   } else {
     const c = CAT[cat];
-    const inCat = open.filter(x=>x.cat===cat);
-    h += `<div class="cat-intro"><div class="swatch">${art({id:'cat-'+c.id, motif:c.art[0], pal:c.art[1]})}</div><div><h2>${c.name}</h2><p>${c.blurb}</p></div></div>`;
-    h += inCat.length
-      ? `<div class="grid">${inCat.map(x=>tile(getItem(x.id))).join('')}</div>`
+    const inCat = cat==='eigen' ? own : open.filter(x=>x.cat===cat).map(x=>getItem(x.id)).concat(own.filter(x=>x.cat===cat));
+    h += `<div class="cat-intro"><div class="swatch">${art({id:'cat-'+c.id, motif:c.art[0], pal:c.art[1]})}</div><div><h2>${cat==='eigen'?'Eigen kaarten':c.name}</h2><p>${cat==='eigen'?'Ideeën die jullie zelf bedachten.':c.blurb}</p></div></div>`;
+    h += (inCat.length || cat==='eigen')
+      ? `<div class="grid">${cat==='eigen'?addCardTile():''}${inCat.map(tile).join('')}</div>`
       : `<div class="empty"><h3>Niets meer over</h3><p>Alles uit ${esc(c.name)} staat al op jullie lijst.</p><button class="btn primary" data-tab="mylist">Naar onze lijst</button></div>`;
   }
   content.innerHTML = h;
@@ -764,6 +833,7 @@ function renderList(){
   const both = all.filter(x=>x.e.for==='both' && (x.e.wants||{}).a && (x.e.wants||{}).b).length;
   h += `<p>${all.length} ${all.length===1?'ervaring':'ervaringen'}, waarvan ${both} samen. ${lived.length} beleefd.</p><button class="editbtn" data-action="editlist" aria-pressed="${listEdit}">${listEdit?'Klaar':'Wijzig'}</button></div>`;
   h += banner;
+  h += wrappedBanner();
   h += `<div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Deel van jullie lijst dat beleefd is"><i style="width:${pct}%"></i></div>`;
   const fl = [['all','Alles'],['both','Samen'],['a',nm('a')],['b',nm('b')]];
   h += `<div class="filters" role="tablist" aria-label="Voor wie">${fl.map(([k,l])=>`<button class="chip" role="tab" data-listfor="${k}" aria-selected="${listFor===k}">${k==='all'?'':k==='both'?pairAv('sm'):av(k,'sm')}${esc(l)}</button>`).join('')}</div>`;
@@ -778,9 +848,10 @@ function renderList(){
     const rest = todo.filter(x=>!waitIds.has(x.id));
     if(wait.length) h += `<div class="group-head"><h2>Wacht op jouw goedkeuring</h2><span class="count">${wait.length}</span></div><ul class="rows">${wait.map(rowHtml).join('')}</ul>`;
     if(rest.length) h += `${wait.length?'<div class="group-head"><h2>Op de lijst</h2></div>':''}<ul class="rows">${rest.map(rowHtml).join('')}</ul>`;
-    if(!todo.length) h += `<div class="empty"><h3>Alles beleefd</h3><p>Alles in deze selectie is gedaan. Tijd voor iets nieuws.</p><button class="btn soft" data-action="draw">Verras ons</button></div>`;
+    if(!todo.length) h += `<div class="empty"><h3>Alles beleefd</h3><p>Alles in deze selectie is gedaan. Tijd voor iets nieuws.</p><button class="btn soft" data-action="swipe">Swipen</button></div>`;
   } else {
     h += done.length ? `<ul class="rows">${done.map(rowHtml).join('')}</ul>` : `<div class="empty"><h3>Nog niets beleefd</h3><p>Tik op het rondje naast een ervaring zodra jullie het gedaan hebben.</p></div>`;
+    h += wrappedArchive();
   }
   h += ownForm();
   listContent.innerHTML = h;
@@ -825,12 +896,15 @@ function refreshAll(){
     if(getItem(sheet.dataset.id)) renderSheetState(sheet.dataset.id, false); else closeLayer(sheet);
   }
   updateBadge(false);
+  const sw = $('#swipeBadge'); if(sw) sw.hidden = !waitingIds().length;
+  if(!mapScreen.hidden) drawMarkers();
+  if(swipeEl.classList.contains('show') && deck.length && !swipeDrag) renderSwipe();
   syncBrowse();
   hydrate();
 }
 let browseKey = null, browseTimer = null;
 function syncBrowse(){
-  const key = Object.keys(S.entries).sort().join('|');
+  const key = Object.keys(S.entries).sort().join('|') + '#' + JSON.stringify(CARDS);
   if(key === browseKey) return;
   browseKey = key;
   clearTimeout(browseTimer);
@@ -858,6 +932,9 @@ function needMe(){
 function addEntry(id, forWho, start, custom, surprise){
   if(needMe()) return;
   const body = {for:forWho, addedBy:S.me, addedAt:Date.now(), lived:null, wants: forWho==='both' ? {[S.me]:true} : {}, updatedBy:S.me};
+  // Een eigen kaart neemt zijn tekst mee. Zo blijft de ervaring leesbaar als
+  // iemand de kaart later verwijdert.
+  if(!custom && CARDS[id]) custom = Object.assign({}, CARDS[id]);
   if(custom) body.custom = custom;
   // Een verrassing is een cadeau, daar hoeft de ander niets van goed te keuren.
   if(surprise && surprise.openAt){ body.surprise = {by:S.me, openAt:surprise.openAt}; body.wants = {a:true, b:true}; }
@@ -995,6 +1072,7 @@ function openSheet(id){
           <div><dt>Duur</dt><dd>${esc(item.time || 'Aan jullie')}</dd></div>
           <div><dt>Moeite</dt><dd>${esc(EFFORTS[effortOf(item)])}</dd></div>
         </dl>
+        <div id="sheetPlace"></div>
         <div id="sheetOwner"></div>
         <div id="sheetMemory"></div>
       </div>
@@ -1049,8 +1127,10 @@ function renderSheetState(id, stampIn){
     slot.innerHTML = '';
     return;
   }
+  const pl = $('#sheetPlace');
+  if(pl) pl.innerHTML = (e && it) ? placeRow(id, e, it) : '';
   if(!e){
-    owner.innerHTML = '';
+    owner.innerHTML = (it && it.card) ? `<div class="owner-box"><div class="owner-top"><p class="for-label">Eigen kaart${it.by && S.names[it.by] ? ' van '+esc(nm(it.by)) : ''}</p><button class="pencil" data-cardedit="${id}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Kaart aanpassen</button></div></div>` : '';
     const mb = $('#sheetMemory'); if(mb) mb.innerHTML = '';
     cta.className = 'sheet-cta stack';
     cta.innerHTML = `<p class="for-label">Toevoegen aan jullie lijst, voor</p>${forRow(id, null)}`;
@@ -1133,7 +1213,7 @@ function resetEditor(){
 /* ---------- Herinnering ---------- */
 const AGAIN = [['again','Meteen weer'],['maybe','Misschien ooit'],['once','Eén keer was genoeg'],['cant','Niet mogelijk']];
 const againLabel = v => (AGAIN.find(a=>a[0]===v)||[])[1] || '';
-let memId = null, memAgain = null, uploading = [];
+let memId = null, memAgain = null, uploading = [], memPlace = null, memPlaceSet = false;
 function memoryBox(id, e){
   const m = e.memory || {};
   const photos = livePhotos(e);
@@ -1159,6 +1239,7 @@ function openMemory(id, fresh){
   memId = id;
   const m = e.memory || {}, mine = m[S.me] || {};
   memAgain = mine.again || null;
+  memPlace = validLL(e.place); memPlaceSet = false;
   const date = (m.date) || isoDate(e.lived || Date.now());
   memoryEl.innerHTML = `<div class="grabber"></div>
     <div class="sheet-top"><button class="icon-btn" data-action="closememory" aria-label="Sluiten">${I.close}</button></div>
@@ -1184,6 +1265,11 @@ function openMemory(id, fresh){
         ${partnerNote(m,'again')}
       </div>
       <div class="q">
+        <h3>Waar was het?</h3>
+        <p class="hint">Dan kleurt jullie puntje op de kaart goud, precies op die plek.</p>
+        <div id="memPlace"></div>
+      </div>
+      <div class="q">
         <h3>Foto’s</h3>
         <p class="hint">Bewaar de beelden bij deze herinnering.</p>
         <div id="memPhotos"></div>
@@ -1191,7 +1277,17 @@ function openMemory(id, fresh){
     </div></div>
     <div class="sheet-cta form-cta"><button class="btn soft" data-action="closememory">Later</button><button class="btn primary" data-action="savememory">Opslaan</button></div>`;
   renderMemPhotos();
+  renderMemPlace();
   openLayer(memoryEl);
+}
+function renderMemPlace(){
+  const box = $('#memPlace'); if(!box) return;
+  const it = getItem(memId); if(!it) return;
+  const base = validLL(it.ll);
+  const [t, sub] = memPlace ? ['Plek gekozen', 'Tik om te wijzigen']
+    : base ? [it.where, 'Staat al op de kaart. Tik om de precieze plek te kiezen']
+    : ['Nog geen plek', 'Tik om de plek op de kaart aan te wijzen'];
+  box.innerHTML = `<button type="button" class="place-row ${memPlace||base?'on':''}" data-action="memplace">${I.pin}<span><strong>${esc(t)}</strong><small>${esc(sub)}</small></span></button>`;
 }
 function renderMemPhotos(){
   const box = $('#memPhotos'); if(!box) return;
@@ -1215,6 +1311,7 @@ function saveMemory(){
     again: memAgain
   };
   const patch = {memory:{date, [S.me]:mine}, updatedBy:S.me};
+  if(memPlaceSet) patch.place = memPlace || null;
   const ts = fromIso(date); if(ts) patch.lived = ts;
   patchEntry(id, patch);
   closeLayer(memoryEl);
@@ -1466,40 +1563,194 @@ function showMatch(id){
   setTimeout(()=>{ const b=matchEl.querySelector('[data-matchopen]'); b && b.focus({preventScroll:true}); }, 80);
 }
 
-/* ---------- Verras ons ---------- */
-function openDraw(){
-  draw.innerHTML = `<button class="icon-btn close" data-action="closedraw" aria-label="Sluiten">${I.close}</button>
-    <h2>Trek een kaart</h2><p class="sub">Eén van deze kaarten is jullie volgende avontuur.</p>
-    <div class="deck">${[0,1,2].map(i=>`<button class="pick" data-pick="${i}" aria-label="Kaart ${i+1}"><span class="wrap"><b>Ooit</b></span></button>`).join('')}</div>`;
-  openLayer(draw);
-  setTimeout(()=>{ const b=draw.querySelector('.pick'); b && b.focus({preventScroll:true}); }, 80);
+/* ---------- Swipen ---------- */
+// Swipes zijn geheim. De app leest alleen je eigen swipes. De database maakt
+// zelf de match zodra jullie allebei naar rechts swipen.
+let mySwipes = null, deck = [], deckPos = 0, lastSwipe = null, swipeBusy = false, swipeDrag = false;
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); const t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+  return arr;
 }
-function pickCard(btn){
-  const pool = DATA.filter(x=>!S.entries[x.id] && x.cat!=='elkaar');
-  const src = pool.length ? pool : DATA;
-  const item = src[Math.floor(Math.random()*src.length)];
-  draw.querySelectorAll('.pick').forEach(p=>{ if(p!==btn) p.classList.add('gone'); });
-  btn.style.transform='translateY(-14px) scale(1.06)'; vibrate(10);
-  setTimeout(()=>{
-    const c = CAT[item.cat];
-    const on = !!S.entries[item.id];
-    draw.innerHTML = `<button class="icon-btn close" data-action="closedraw" aria-label="Sluiten">${I.close}</button>
-      <h2>${c.name}</h2><p class="sub">Jullie kaart voor dit seizoen</p>
-      <div class="reveal"><div class="flipper" id="flipper">
-        <div class="face"><span class="wrap"><b>Ooit</b></span></div>
-        <div class="face front">${art(item)}<div class="info"><h3>${esc(item.title)}</h3><p>${esc(item.where)}. ${esc(item.time)}</p></div></div>
-      </div></div>
-      <div class="reveal-actions" id="revealActions">
-        <button class="btn gold small" data-drawadd="${item.id}" ${on?'disabled':''}>${on?'Staat op jullie lijst':'Toevoegen'}</button>
-        <button class="btn soft small" data-drawopen="${item.id}">Details</button>
-        <button class="btn soft small" data-action="redraw">Nog een</button>
+function buildDeck(){
+  const m = new Date().getMonth()+1;
+  const props = waitingIds().map(id=>({id, proposal:true}));
+  const pool = DATA.concat(cardList()).filter(x=>x.cat!=='elkaar' && !S.entries[x.id] && !(mySwipes && mySwipes[x.id]));
+  const now = shuffle(pool.filter(x=>inSeason(x, m))), later = shuffle(pool.filter(x=>!inSeason(x, m)));
+  deck = props.concat(now.concat(later).map(x=>({id:x.id})));
+  deckPos = 0;
+}
+function cardValid(c){
+  if(!c || !getItem(c.id)) return false;
+  if(c.proposal) return waitingIds().indexOf(c.id) !== -1;
+  return !S.entries[c.id] && !(mySwipes && mySwipes[c.id]);
+}
+function validFrom(i){ while(i < deck.length && !cardValid(deck[i])) i++; return i; }
+function swipeCardHtml(c, cls){
+  const item = getItem(c.id); const cc = CAT[item.cat] || CAT.eigen;
+  const tag = c.proposal ? `<span class="pill want ${other(S.me)}">${esc(nm(other(S.me)))} stelde dit voor</span>`
+    : item.card ? `<span class="pill ghost">Eigen kaart</span>` : (item.rare ? '<span class="pill">Zeldzaam</span>' : '');
+  return `<article class="sw-card ${cls}" data-swcard="${esc(c.id)}">
+    <div class="sw-art">${art(item)}${tag?`<div class="badges">${tag}</div>`:''}<span class="sw-stamp yes">Wil ik</span><span class="sw-stamp no">Niet voor mij</span></div>
+    <div class="sw-info"><div class="sw-kicker"><span class="dot" style="background:${cc.color}"></span>${esc(cc.name)}<span class="effort e-${effortOf(item)}">${EFFORT_SHORT[effortOf(item)]}</span></div>
+      <h3>${esc(item.title)}</h3><p class="sw-where">${esc(item.where)}${item.time?'. '+esc(item.time):''}</p><p class="sw-blurb">${esc(item.blurb)}</p><p class="sw-more">Tik voor meer</p></div>
+  </article>`;
+}
+function renderSwipe(){
+  if(swipeBusy) return;
+  const i = validFrom(deckPos); deckPos = i;
+  const j = validFrom(i+1);
+  const left = deck.slice(i).filter(cardValid).length;
+  let h = `<button class="icon-btn close" data-action="closeswipe" aria-label="Sluiten">${I.close}</button>
+    <div class="sw-head"><h2>Swipen</h2><p class="sub">Rechts is wil ik, links is niet voor mij. ${esc(nm(other(S.me)))} ziet alleen jullie matches.</p></div>`;
+  if(i < deck.length){
+    h += `<div class="sw-stack">${j < deck.length ? swipeCardHtml(deck[j], 'next') : ''}${swipeCardHtml(deck[i], 'top')}</div>
+      <p class="sw-count">${left===1 ? 'Nog 1 kaart' : `Nog ${left} kaarten`}</p>
+      <div class="sw-btns">
+        <button class="sw-btn no" data-swipe="left" aria-label="Niet voor mij">${I.close}</button>
+        <button class="sw-btn undo" data-action="swipeundo" aria-label="Vorige kaart terug" ${lastSwipe?'':'disabled'}>${I.undo}</button>
+        <button class="sw-btn yes" data-swipe="right" aria-label="Wil ik">${I.heart}</button>
       </div>`;
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      $('#flipper').classList.add('flipped');
-      const f = draw.querySelector('.face.front .art'); if(f) f.classList.add('animate');
-      $('#revealActions').classList.add('show');
-    }));
-  }, 380);
+  } else {
+    const vals = Object.values(mySwipes || {});
+    const yes = vals.filter(d=>d==='right').length, no = vals.filter(d=>d==='left').length;
+    h += `<div class="sw-empty"><div class="empty-art">${art({id:'swdone', motif:'circles', pal:'dusk'})}</div><h3>Je hebt alles gezien</h3>
+      <p>${yes ? `Je zei ja tegen ${yes===1 ? '1 kaart' : yes+' kaarten'}. Swipet ${esc(nm(other(S.me)))} daar ook naar rechts, dan hebben jullie een match.` : 'Nieuwe kaarten komen hier vanzelf bij.'}</p>
+      <div class="sw-empty-btns">${no?`<button class="btn gold small" data-action="swipereset">Opnieuw beginnen</button>`:''}${lastSwipe?`<button class="btn soft small" data-action="swipeundo">Vorige terug</button>`:''}<button class="btn soft small" data-action="closeswipe">Sluiten</button></div>
+      ${no?`<p class="sw-note">Opnieuw beginnen laat ${no===1?'de kaart':'de '+no+' kaarten'} terugkomen waar je naar links op swipete.</p>`:''}</div>`;
+  }
+  swipeEl.innerHTML = h;
+  bindSwipeCard();
+}
+async function openSwipe(){
+  if(needMe()) return;
+  swipeEl.innerHTML = `<button class="icon-btn close" data-action="closeswipe" aria-label="Sluiten">${I.close}</button><p class="sub">Kaarten schudden</p>`;
+  openLayer(swipeEl);
+  try{
+    const {data, error} = await sb.from('swipes').select('item_id,dir');
+    if(error) throw error;
+    mySwipes = {};
+    (data||[]).forEach(r=>{ mySwipes[r.item_id] = r.dir; });
+  }catch(err){
+    console.error(err);
+    const setup = /swipes|PGRST20|42P01|schema cache|does not exist/i.test(String((err && (err.message || err.code)) || ''));
+    swipeEl.innerHTML = `<button class="icon-btn close" data-action="closeswipe" aria-label="Sluiten">${I.close}</button>
+      <div class="sw-empty"><h3>Swipen lukt nu niet</h3><p>${setup ? 'De database mist nog een onderdeel. Voer supabase/swipe-en-kaarten.sql uit in Supabase, zie de README.' : 'Controleer je internet en probeer het opnieuw.'}</p><button class="btn soft small" data-action="closeswipe">Sluiten</button></div>`;
+    return;
+  }
+  lastSwipe = null;
+  buildDeck();
+  renderSwipe();
+}
+function setStamps(card, dx){
+  const y = card.querySelector('.sw-stamp.yes'), n = card.querySelector('.sw-stamp.no');
+  if(y) y.style.opacity = Math.max(0, Math.min(1, dx/90));
+  if(n) n.style.opacity = Math.max(0, Math.min(1, -dx/90));
+}
+function bindSwipeCard(){
+  const card = swipeEl.querySelector('.sw-card.top'); if(!card) return;
+  let sx = 0, sy = 0, dx = 0, dy = 0, down = false, t0 = 0;
+  card.addEventListener('pointerdown', e=>{
+    if(e.button > 0 || swipeBusy) return;
+    down = true; swipeDrag = true; sx = e.clientX; sy = e.clientY; dx = dy = 0; t0 = Date.now();
+    try{ card.setPointerCapture(e.pointerId); }catch(err){}
+    card.style.transition = 'none';
+  });
+  card.addEventListener('pointermove', e=>{
+    if(!down) return;
+    dx = e.clientX - sx; dy = e.clientY - sy;
+    card.style.transform = `translate(${dx}px, ${dy*.25}px) rotate(${dx/16}deg)`;
+    setStamps(card, dx);
+  });
+  const reset = ()=>{ card.style.transition = ''; card.style.transform = ''; setStamps(card, 0); };
+  card.addEventListener('pointerup', ()=>{
+    if(!down) return; down = false; swipeDrag = false;
+    const quick = Math.abs(dx) > 45 && Date.now() - t0 < 260;
+    if(Math.abs(dx) > 100 || quick){ card.style.transition = ''; commitSwipe(dx > 0 ? 'right' : 'left'); return; }
+    reset();
+    if(Math.abs(dx) < 6 && Math.abs(dy) < 6) card.classList.toggle('open');
+  });
+  card.addEventListener('pointercancel', ()=>{ down = false; swipeDrag = false; reset(); });
+}
+function commitSwipe(dir){
+  if(swipeBusy) return;
+  const card = swipeEl.querySelector('.sw-card.top'); const c = deck[deckPos];
+  if(!card || !c) return;
+  swipeBusy = true;
+  const w = swipeEl.clientWidth || 400;
+  card.style.transition = 'transform .3s ease-in, opacity .3s ease-in';
+  card.style.transform = `translate(${dir==='right' ? w*1.25 : -w*1.25}px, 30px) rotate(${dir==='right' ? 22 : -22}deg)`;
+  card.style.opacity = '0';
+  setStamps(card, dir==='right' ? 120 : -120);
+  const next = swipeEl.querySelector('.sw-card.next'); if(next) next.classList.add('rise');
+  vibrate(8);
+  const pos = deckPos;
+  setTimeout(()=>{
+    swipeBusy = false;
+    deckPos = pos + 1;
+    applySwipe(c, dir, pos);
+    if(swipeEl.classList.contains('show')) renderSwipe();
+  }, 260);
+}
+function applySwipe(c, dir, pos){
+  const id = c.id;
+  if(c.proposal){
+    if(dir==='right'){ lastSwipe = null; wantToo(id); }
+    else {
+      const prev = S.entries[id];
+      lastSwipe = {pos, kind:'decline', id, prev};
+      removeEntry(id);
+      toast('Voorstel afgewezen');
+    }
+    return;
+  }
+  mySwipes[id] = dir;
+  lastSwipe = {pos, kind:'swipe', id};
+  const key = 'swipe:'+id;
+  queues[key] = (queues[key] || Promise.resolve()).catch(()=>{})
+    .then(()=>sb.rpc('swipe', {p_item:id, p_dir:dir}))
+    .then(res=>{ if(res.error) throw res.error; if(res.data && res.data.match) onSwipeMatch(id); })
+    .catch(err=>{
+      console.error(err);
+      if(mySwipes) delete mySwipes[id];
+      if(lastSwipe && lastSwipe.id===id) lastSwipe = null;
+      toast(errText(err));
+    });
+}
+function onSwipeMatch(id){
+  if(lastSwipe && lastSwipe.id===id) lastSwipe = null;
+  if(mySwipes) delete mySwipes[id];
+  if(!S.entries[id]){
+    const body = {for:'both', addedBy:S.me, addedAt:Date.now(), lived:null, wants:{a:true, b:true}, updatedBy:S.me, via:'swipe'};
+    if(CARDS[id]) body.custom = Object.assign({}, CARDS[id]);
+    S.entries[id] = body;
+  }
+  refreshAll(); updateBadge(true);
+  vibrate([10,40,14]);
+  showMatch(id);
+  const it = getItem(id);
+  notify('Match', `Jullie swipeten allebei naar rechts: ${it ? it.title : 'een nieuwe ervaring'}`, {tag:'match-'+id});
+  scheduleRefetch(500);
+}
+function swipeUndo(){
+  const l = lastSwipe; if(!l) return;
+  lastSwipe = null;
+  if(l.kind==='decline'){ if(!S.entries[l.id] && l.prev) putEntry(l.id, Object.assign({}, l.prev)); }
+  else {
+    if(mySwipes) delete mySwipes[l.id];
+    enqueue('swipe:'+l.id, ()=>sb.from('swipes').delete().eq('item_id', l.id));
+  }
+  deckPos = l.pos;
+  renderSwipe();
+}
+async function swipeReset(){
+  try{
+    const {error} = await sb.from('swipes').delete().eq('dir', 'left');
+    if(error) throw error;
+  }catch(err){ onWriteError(err); return; }
+  Object.keys(mySwipes || {}).forEach(k=>{ if(mySwipes[k]==='left') delete mySwipes[k]; });
+  lastSwipe = null;
+  buildDeck(); renderSwipe();
+  toast('De stapel is opnieuw geschud');
 }
 
 /* ---------- Dobbel de dag ---------- */
@@ -1591,16 +1842,801 @@ function addOwn(title){
     addEntry(id, who, null, custom, sp);
     query=''; $('#q').value=''; listView='todo'; listFor='all';
     setTab('mylist');
+    setTimeout(()=>openPlacePicker({heading:'Waar is het?', title, skipLabel:'Overslaan',
+      onDone: ll=>{ if(ll && S.entries[id]){ patchEntry(id, {place:ll, updatedBy:S.me}); toast('Staat op jullie kaart'); } }}), 450);
   }});
+}
+
+/* ---------- Kaart ---------- */
+// Leaflet laadt pas als iemand de kaart opent. De kaarttegels komen van
+// CARTO, op basis van OpenStreetMap.
+let leafletP = null;
+function loadLeaflet(){
+  if(window.L) return Promise.resolve(window.L);
+  if(!leafletP) leafletP = new Promise((resolve, reject)=>{
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'vendor/leaflet-1.9.4.css';
+    document.head.appendChild(css);
+    const js = document.createElement('script'); js.src = 'vendor/leaflet-1.9.4.js';
+    js.onload = ()=>resolve(window.L);
+    js.onerror = ()=>{ leafletP = null; js.remove(); reject(new Error('leaflet')); };
+    document.head.appendChild(js);
+  });
+  return leafletP;
+}
+const darkMQ = matchMedia('(prefers-color-scheme: dark)');
+function addTiles(L, m){
+  const style = darkMQ.matches ? 'dark_all' : 'light_all';
+  return L.tileLayer(`https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`, {
+    subdomains:'abcd', maxZoom:19,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  }).addTo(m);
+}
+function placeOf(id, e){
+  e = e || S.entries[id];
+  const own = e && validLL(e.place); if(own) return own;
+  const b = baseItem(id);
+  return b ? validLL(b.ll) : null;
+}
+const mapPoints = () => listItems().filter(x=>!isHidden(x.id, x.e)).map(x=>Object.assign({ll:placeOf(x.id, x.e)}, x)).filter(x=>x.ll);
+const noPlaceItems = () => listItems().filter(x=>!isHidden(x.id, x.e) && !placeOf(x.id, x.e));
+let lmap = null, lTiles = null, lLayer = null, mapFitted = false, mapSel = null;
+async function showMap(){
+  const msg = $('#mapMsg');
+  if(!lmap){
+    let L;
+    try{ L = await loadLeaflet(); }
+    catch(err){ msg.textContent = 'De kaart laden lukte niet. Controleer je internet en open dit tabblad opnieuw.'; msg.hidden = false; return; }
+    msg.hidden = true;
+    lmap = L.map('mapEl', {zoomControl:false, worldCopyJump:true, minZoom:2, maxZoom:18, zoomSnap:.5});
+    lmap.setView([35, 10], 2);
+    lmap.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
+    lTiles = addTiles(L, lmap);
+    lLayer = L.layerGroup().addTo(lmap);
+    lmap.on('zoomend', drawMarkers);
+    lmap.on('click', hideMapCard);
+    if(darkMQ.addEventListener) darkMQ.addEventListener('change', ()=>{ if(lmap && lTiles){ lmap.removeLayer(lTiles); lTiles = addTiles(window.L, lmap); } });
+  }
+  requestAnimationFrame(()=>{
+    if(!lmap) return;
+    lmap.invalidateSize();
+    if(!mapFitted) fitMap();
+    drawMarkers();
+  });
+}
+function fitMap(){
+  if(!lmap || !S.listReady) return;
+  const pts = mapPoints();
+  mapFitted = true;
+  if(!pts.length) lmap.setView([35, 10], 2);
+  else if(pts.length===1) lmap.setView(pts[0].ll, 6);
+  // Bovenin liggen de titel en de knop voor plekken, daar blijven de punten vandaan.
+  else lmap.fitBounds(window.L.latLngBounds(pts.map(p=>p.ll)), {paddingTopLeft:[50, 190], paddingBottomRight:[50, 80], maxZoom:7});
+}
+function drawMarkers(){
+  if(!lmap || !lLayer || mapScreen.hidden) return;
+  const L = window.L;
+  lLayer.clearLayers();
+  const pts = mapPoints();
+  // Punten die dicht op elkaar liggen worden één bolletje met een getal.
+  const groups = [];
+  pts.forEach(p=>{
+    const px = lmap.latLngToLayerPoint(p.ll);
+    const g = groups.find(g=>g.px.distanceTo(px) < 30);
+    if(g) g.items.push(p); else groups.push({px, items:[p]});
+  });
+  groups.forEach(g=>{
+    const n = g.items.length, lived = g.items.filter(x=>x.e.lived).length;
+    if(n===1){
+      const p = g.items[0];
+      const m = L.marker(p.ll, {title:p.item.title, keyboard:true, riseOnHover:true,
+        icon:L.divIcon({className:'pin-wrap', html:`<span class="pin ${p.e.lived?'gold':'grey'} ${mapSel===p.id?'sel':''}"></span>`, iconSize:[28,28], iconAnchor:[14,14]})});
+      m.on('click', ev=>{ L.DomEvent.stop(ev); showMapCard(p.id); });
+      m.addTo(lLayer);
+      return;
+    }
+    const lat = g.items.reduce((a,x)=>a+x.ll[0],0)/n, lng = g.items.reduce((a,x)=>a+x.ll[1],0)/n;
+    const tone = lived===n ? 'gold' : (lived ? 'mix' : 'grey');
+    const m = L.marker([lat, lng], {title:`${n} ervaringen`, keyboard:true,
+      icon:L.divIcon({className:'pin-wrap', html:`<span class="pin cluster ${tone}">${n}</span>`, iconSize:[36,36], iconAnchor:[18,18]})});
+    m.on('click', ev=>{
+      L.DomEvent.stop(ev);
+      const b = L.latLngBounds(g.items.map(x=>x.ll));
+      if(b.getNorthEast().distanceTo(b.getSouthWest()) < 30 || lmap.getZoom() >= 16) showMapList(g.items);
+      else lmap.flyToBounds(b, {padding:[90, 90], maxZoom:16, duration:.6});
+    });
+    m.addTo(lLayer);
+  });
+  const lv = pts.filter(p=>p.e.lived).length;
+  $('#mapCount').textContent = pts.length ? `${pts.length-lv} te doen, ${lv} beleefd` : 'Nog niets op de kaart';
+  const np = noPlaceItems().length, b = $('#mapNoPlace');
+  b.hidden = !np;
+  b.innerHTML = `${I.pin}<span>${np===1 ? '1 ervaring zonder plek' : np+' ervaringen zonder plek'}</span>`;
+  if(mapSel && !S.entries[mapSel]) hideMapCard();
+}
+function showMapCard(id){
+  const e = S.entries[id], it = getItem(id); if(!e || !it) return;
+  mapSel = id;
+  const ph = livePhotos(e)[0];
+  const thumb = (e.lived && ph && photoPath(e, ph)) ? imgTag(photoPath(e, ph), '') : art(it);
+  const card = $('#mapCard');
+  card.innerHTML = `<button class="mc-main" data-open="${esc(id)}"><span class="mc-thumb ${e.lived?'lived':''}">${thumb}</span>
+      <span class="mc-text"><span class="mc-kicker ${e.lived?'gold':''}">${e.lived?'Beleefd':'Te doen'}</span><strong>${esc(it.title)}</strong><small>${esc(e.lived ? fmtDate(livedDate(e)) : statusText(e))}</small></span></button>
+    <div class="mc-btns"><button class="btn soft small" data-place="${esc(id)}">Plek wijzigen</button><button class="btn gold small" data-open="${esc(id)}">Bekijken</button></div>`;
+  card.hidden = false;
+  card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
+  hydrate(); drawMarkers();
+}
+function hideMapCard(){
+  if(!mapSel) return;
+  mapSel = null;
+  const c = $('#mapCard'); if(c) c.hidden = true;
+  drawMarkers();
+}
+function listSheet(title, sub, rows){
+  pickCtx = null;
+  pickerEl.innerHTML = `<div class="grabber"></div><div class="picker">
+    <h2>${esc(title)}</h2><p>${esc(sub)}</p>
+    <div class="list-pick">${rows}</div>
+    <button class="btn soft cancel" data-action="closepicker">Sluiten</button></div>`;
+  openLayer(pickerEl);
+}
+function showMapList(items){
+  listSheet(`${items.length} ervaringen op deze plek`, 'Kies er een om te bekijken.',
+    items.map(x=>`<button class="pick-row" data-mapitem="${esc(x.id)}"><span class="lp-dot ${x.e.lived?'gold':'grey'}"></span><span><strong>${esc(x.item.title)}</strong><small>${esc(x.e.lived ? 'Beleefd' : statusText(x.e))}</small></span></button>`).join(''));
+}
+function showNoPlace(){
+  const items = noPlaceItems();
+  if(!items.length) return;
+  listSheet('Nog zonder plek', 'Tik op een ervaring en wijs de plek aan op de kaart.',
+    items.map(x=>`<button class="pick-row" data-placefor="${esc(x.id)}"><span class="lp-dot ${x.e.lived?'gold':'grey'}"></span><span><strong>${esc(x.item.title)}</strong><small>${esc(x.item.where)}</small></span></button>`).join(''));
+}
+
+/* ---------- Plek kiezen ---------- */
+let pmap = null, pmarker = null, placeCtx = null, placePick = null;
+const round5 = n => Math.round(n*1e5)/1e5;
+const wrapLng = n => ((n + 180) % 360 + 360) % 360 - 180;
+async function openPlacePicker(ctx){
+  placeCtx = ctx;
+  placePick = validLL(ctx.current);
+  placeEl.innerHTML = `<div class="place-map" id="placeMap"></div>
+    <div class="place-top"><div><h2>${esc(ctx.heading || 'Waar is het?')}</h2><p>${esc(ctx.title || '')}</p></div><button class="icon-btn" data-action="placecancel" aria-label="Sluiten">${I.close}</button></div>
+    <div class="place-bottom">
+      <p class="place-hint" id="placeHint">${placePick ? 'Tik ergens anders om de plek te verplaatsen.' : 'Tik op de kaart om de plek aan te wijzen.'}</p>
+      <div class="place-tools">${'geolocation' in navigator ? `<button class="btn soft small" data-action="placehere">${I.pin}Hier ben ik</button>` : ''}${ctx.allowClear && placePick ? `<button class="btn soft small" data-action="placeclear">Plek wissen</button>` : ''}</div>
+      <div class="place-cta"><button class="btn soft" data-action="placecancel">${esc(ctx.skipLabel || 'Annuleren')}</button><button class="btn primary" data-action="placesave" ${placePick ? '' : 'disabled'}>Opslaan</button></div>
+    </div>`;
+  openLayer(placeEl);
+  let L;
+  try{ L = await loadLeaflet(); }
+  catch(err){ const h = $('#placeHint'); if(h) h.textContent = 'De kaart laden lukte niet. Controleer je internet.'; return; }
+  if(placeCtx !== ctx) return;
+  if(pmap){ pmap.remove(); pmap = null; }
+  pmarker = null;
+  const hint = validLL(ctx.hint);
+  const start = placePick || hint || [52.15, 5.3];
+  pmap = L.map('placeMap', {zoomControl:false, worldCopyJump:true, minZoom:2, maxZoom:18});
+  pmap.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
+  pmap.setView(start, placePick ? 12 : (hint ? 8 : 7));
+  addTiles(L, pmap);
+  if(placePick) setPlaceMarker(placePick);
+  pmap.on('click', ev=>setPlaceMarker([ev.latlng.lat, ev.latlng.lng]));
+  setTimeout(()=>{ if(pmap) pmap.invalidateSize(); }, 380);
+}
+function setPlaceMarker(ll){
+  const L = window.L; if(!L || !pmap) return;
+  placePick = [round5(ll[0]), round5(wrapLng(ll[1]))];
+  if(pmarker) pmarker.setLatLng(placePick);
+  else pmarker = L.marker(placePick, {interactive:false, icon:L.divIcon({className:'pin-wrap', html:'<span class="pin gold big"></span>', iconSize:[34,34], iconAnchor:[17,17]})}).addTo(pmap);
+  const b = placeEl.querySelector('[data-action="placesave"]'); if(b) b.disabled = false;
+  const h = $('#placeHint'); if(h) h.textContent = 'Plek gekozen. Tik ergens anders om hem te verplaatsen.';
+}
+function closePlace(){
+  closeLayer(placeEl);
+  setTimeout(()=>{ if(!placeEl.classList.contains('show') && pmap){ pmap.remove(); pmap = null; pmarker = null; } }, 450);
+}
+function placeFinish(ll, skipped){
+  const ctx = placeCtx; placeCtx = null;
+  closePlace();
+  if(!ctx) return;
+  if(skipped){ if(ctx.onSkip) ctx.onSkip(); }
+  else if(ctx.onDone) ctx.onDone(ll);
+}
+function placeHere(btn){
+  if(!navigator.geolocation) return;
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    btn.disabled = false;
+    setPlaceMarker([pos.coords.latitude, pos.coords.longitude]);
+    if(pmap) pmap.setView(placePick, 14);
+  }, ()=>{ btn.disabled = false; toast('Je locatie ophalen lukte niet. Tik zelf op de kaart.'); }, {enableHighAccuracy:true, timeout:10000, maximumAge:60000});
+}
+function placeRow(id, e, it){
+  if(isHidden(id, e)) return '';
+  const own = validLL(e.place), base = validLL(it.ll);
+  const [t, sub] = own ? ['Op jullie kaart', 'Tik om de plek te wijzigen']
+    : base ? ['Op jullie kaart', 'Tik om de precieze plek te kiezen']
+    : ['Nog niet op de kaart', 'Tik om de plek aan te wijzen'];
+  return `<button class="place-row ${own||base?'on':''}" data-place="${esc(id)}">${I.pin}<span><strong>${t}</strong><small>${sub}</small></span></button>`;
+}
+function pickPlaceFor(id){
+  if(needMe()) return;
+  const e = S.entries[id], it = getItem(id); if(!e || !it) return;
+  const own = validLL(e.place);
+  openPlacePicker({heading: e.lived ? 'Waar was het?' : 'Waar is het?', title: it.title, current: own, hint: validLL(it.ll), allowClear: !!own,
+    onDone: ll=>{
+      if(!S.entries[id]) return;
+      patchEntry(id, {place: ll, updatedBy:S.me});
+      toast(ll ? 'Plek bewaard' : 'Plek gewist');
+      if(!mapScreen.hidden && ll && lmap){ lmap.setView(ll, Math.max(lmap.getZoom(), 8)); showMapCard(id); }
+    }});
+}
+
+/* ---------- Eigen kaart maken ---------- */
+let cardEdit = null, cardArmed = false;
+function openCardForm(opts){
+  if(needMe()) return;
+  const o = opts || {};
+  const c = o.id ? CARDS[o.id] : null;
+  if(o.id && !c) return;
+  cardArmed = false;
+  cardEdit = {id: o.id || null, cat: (c && CAT[c.cat]) ? c.cat : 'eigen', effort: (c && EFFORTS[c.effort]) ? c.effort : 'middag', ll: c ? validLL(c.ll) : null};
+  const v = k => esc(c ? (c[k] || '') : (k==='title' ? (o.title || '') : ''));
+  editorEl.innerHTML = `<div class="grabber"></div>
+    <div class="sheet-top"><button class="icon-btn" data-action="closeeditor" aria-label="Sluiten">${I.close}</button></div>
+    <div class="sheet-scroll"><div class="form">
+      <h2 id="edTitle">${c ? 'Kaart aanpassen' : 'Eigen kaart maken'}</h2>
+      <p class="sub">${c ? 'Wijzigingen ziet '+esc(nm(other(S.me)))+' ook.' : 'De kaart komt in Ontdekken te staan. Een van jullie kan hem daarna kiezen, net als de andere kaarten.'}</p>
+      <label class="field">Wat gaan jullie doen?<input id="cd_title" maxlength="90" value="${v('title')}" placeholder="Bijvoorbeeld: poffertjes eten bij de molen"></label>
+      <label class="field">Waar<input id="cd_where" maxlength="80" value="${v('where')}" placeholder="Bijvoorbeeld: Kinderdijk, of thuis"></label>
+      <label class="field">Waarom dit een goed idee is<textarea id="cd_blurb" rows="3" maxlength="400" placeholder="Optioneel">${v('blurb')}</textarea></label>
+      <div class="field">Soort<div class="opt-chips" id="cdCats">${CATS.map(k=>`<button type="button" class="opt-chip" data-cardcat="${k.id}" aria-pressed="${cardEdit.cat===k.id}"><span class="dot" style="background:${k.color}"></span>${esc(k.short)}</button>`).join('')}</div></div>
+      <div class="field">Moeite<div class="opt-chips" id="cdEffort">${Object.keys(EFFORTS).map(k=>`<button type="button" class="opt-chip" data-cardeffort="${k}" aria-pressed="${cardEdit.effort===k}">${esc(EFFORTS[k])}</button>`).join('')}</div></div>
+      <div class="field">Plek op de kaart<div id="cdPlace"></div></div>
+      <p class="who-err" id="cdErr" hidden>Geef de kaart een titel.</p>
+    </div></div>
+    <div class="sheet-cta">${c ? `<button class="btn soft" data-action="deletecard">Verwijderen</button>` : `<button class="btn soft" data-action="closeeditor">Annuleren</button>`}<button class="btn primary" data-action="savecard">${c ? 'Opslaan' : 'In Ontdekken zetten'}</button></div>`;
+  renderCardPlace();
+  openLayer(editorEl);
+  if(!c) setTimeout(()=>{ const i = $('#cd_title'); if(i && !i.value) i.focus({preventScroll:true}); }, 320);
+}
+function renderCardPlace(){
+  const box = $('#cdPlace'); if(!box || !cardEdit) return;
+  box.innerHTML = `<button type="button" class="place-row ${cardEdit.ll?'on':''}" data-action="cardplace">${I.pin}<span><strong>${cardEdit.ll ? 'Plek gekozen' : 'Nog geen plek'}</strong><small>${cardEdit.ll ? 'Tik om te wijzigen' : 'Optioneel. Tik om de plek aan te wijzen'}</small></span></button>`;
+}
+function saveCard(){
+  if(!cardEdit) return;
+  const val = k => (($('#cd_'+k)||{}).value || '').trim();
+  const title = val('title');
+  if(!title){ const e = $('#cdErr'); if(e) e.hidden = false; return; }
+  const isNew = !cardEdit.id;
+  const id = cardEdit.id || 'card-'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
+  const prev = CARDS[id] || {};
+  const data = Object.assign({}, prev, {title, where: val('where'), blurb: val('blurb'), cat: cardEdit.cat, effort: cardEdit.effort,
+    ll: cardEdit.ll || null, by: prev.by || S.me, at: prev.at || Date.now()});
+  if(!data.motif){
+    const r = rng(hash(title + id));
+    data.motif = OWN_MOTIFS[Math.floor(r()*OWN_MOTIFS.length)];
+    data.pal = PAL_KEYS[Math.floor(r()*PAL_KEYS.length)];
+  }
+  CARDS[id] = data;
+  cardEdit = null;
+  closeLayer(editorEl);
+  refreshAll();
+  enqueue('card:'+id, ()=> isNew
+    ? sb.from('cards').insert({id, data})
+    : sb.from('cards').update({data, updated_at:new Date().toISOString()}).eq('id', id));
+  if(isNew){
+    notify(`${nm(S.me)} maakte een nieuwe kaart`, title, {tag:'card-'+id});
+    toast('Je kaart staat in Ontdekken');
+    query = ''; $('#q').value = ''; cat = 'all';
+    if(browse.hidden) setTab('browse'); else renderBrowse();
+    setTimeout(()=>{ const t = document.querySelector(`#ownShelf [data-tile="${id}"]`); if(t){ t.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'}); bump(id); } }, 120);
+  } else {
+    toast('Kaart aangepast');
+    if(sheet.classList.contains('show') && sheet.dataset.id===id) openSheet(id);
+  }
+}
+function deleteCard(btn){
+  if(!cardEdit || !cardEdit.id) return;
+  if(!cardArmed){ cardArmed = true; btn.textContent = 'Zeker weten?'; return; }
+  const id = cardEdit.id, prev = CARDS[id];
+  cardEdit = null;
+  delete CARDS[id];
+  closeLayer(editorEl);
+  if(sheet.classList.contains('show') && sheet.dataset.id===id && !S.entries[id]) closeLayer(sheet);
+  refreshAll();
+  enqueue('card:'+id, ()=>sb.from('cards').delete().eq('id', id));
+  toast('Kaart verwijderd', ()=>{
+    CARDS[id] = prev; refreshAll();
+    enqueue('card:'+id, ()=>sb.from('cards').insert({id, data:prev}));
+  });
+}
+
+/* ---------- Ooit Wrapped ---------- */
+// Een jaaroverzicht in schermen, zoals een Instagram-story. Elk scherm is
+// een getekende afbeelding van 1080 bij 1920. Wat je ziet, bewaar je ook.
+const WR_W = 1080, WR_H = 1920, WR_MS = 7000;
+const WC = {ink:'#F4F1EA', muted:'rgba(244,241,234,.62)', faint:'rgba(244,241,234,.14)', gold:'#F0B44E', a:'#3F63B5', b:'#C4577E'};
+const WF = {d:'"Gloock", "Iowan Old Style", Georgia, serif', u:'"Hanken Grotesk", -apple-system, "Segoe UI", Roboto, sans-serif'};
+const MONTHS = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+function livedIn(y){
+  return listItems().filter(x=>x.e.lived && !isHidden(x.id, x.e) && new Date(livedDate(x.e)).getFullYear()===y)
+    .sort((a,b)=>livedDate(a.e)-livedDate(b.e));
+}
+// In december het lopende jaar, in januari nog even het jaar ervoor.
+function wrappedNowYear(){
+  const d = new Date();
+  if(d.getMonth()===11) return d.getFullYear();
+  if(d.getMonth()===0) return d.getFullYear()-1;
+  return null;
+}
+function wrappedYears(){
+  const d = new Date(), cur = d.getFullYear(), ys = new Set();
+  listItems().forEach(x=>{
+    if(!x.e.lived || isHidden(x.id, x.e)) return;
+    const y = new Date(livedDate(x.e)).getFullYear();
+    if(y < cur || (y===cur && d.getMonth()===11)) ys.add(y);
+  });
+  return [...ys].sort((a,b)=>b-a);
+}
+function wrappedBanner(){
+  const y = wrappedNowYear();
+  if(!y || !livedIn(y).length) return '';
+  return `<button class="wr-banner" data-wrapped="${y}"><span class="wr-b-year">${y}</span><span class="wr-b-text"><small>Ooit Wrapped</small><strong>Jullie ${y} staat klaar</strong></span><span class="wr-b-go">Bekijk</span></button>`;
+}
+function wrappedArchive(){
+  const ys = wrappedYears(); if(!ys.length) return '';
+  return `<div class="wr-archive"><h2>Jaaroverzichten</h2><div class="wr-years">${ys.map(y=>`<button class="chip" data-wrapped="${y}">Ooit ${y}</button>`).join('')}</div></div>`;
+}
+// Zet in de loop van het jaar alvast een melding klaar voor 1 december.
+function scheduleWrappedPush(){
+  const y = new Date().getFullYear();
+  const at = new Date(y, 11, 1, 8, 0, 0).getTime();
+  if(Date.now() >= at || !livedIn(y).length) return;
+  const key = 'ooit-wrapped-push-'+y;
+  if(lsGet(key)) return;
+  ['a','b'].forEach(k=>notify(`Jullie ${y} staat klaar`, 'Ooit Wrapped: kijk terug op wat jullie dit jaar beleefden.', {slot:k, tag:'wrapped-'+y, dedupe:`wrapped:${y}:${k}`, at}));
+  lsSet(key, '1');
+}
+function afterFirstLoad(){
+  scheduleWrappedPush();
+  // Testlink: ?wrapped=2026 opent het overzicht, ook buiten december.
+  let y = null;
+  try{ y = Number(new URLSearchParams(location.search).get('wrapped')); }catch(err){}
+  if(y && y > 2000 && y < 3000){
+    try{ history.replaceState(null, '', location.pathname); }catch(err){}
+    openWrapped(y);
+  }
+}
+
+/* Tekenen */
+function wrFont(ctx, size, fam, weight){ ctx.font = `${weight||400} ${size}px ${WF[fam||'u']}`; }
+function wrLines(ctx, text, maxW, maxLines){
+  const words = String(text||'').split(/\s+/).filter(Boolean); const lines = []; let cur = '';
+  for(const w of words){
+    const t = cur ? cur+' '+w : w;
+    if(ctx.measureText(t).width <= maxW || !cur) cur = t;
+    else { lines.push(cur); cur = w; }
+  }
+  if(cur) lines.push(cur);
+  if(lines.length > maxLines){
+    const keep = lines.slice(0, maxLines);
+    let last = keep[maxLines-1];
+    while(last.length && ctx.measureText(last+'…').width > maxW) last = last.slice(0, -1);
+    keep[maxLines-1] = last.replace(/[\s,.]+$/, '')+'…';
+    return keep;
+  }
+  return lines;
+}
+function wrText(ctx, text, x, y, o){
+  o = o || {};
+  const size = o.size || 44;
+  wrFont(ctx, size, o.fam, o.weight);
+  ctx.fillStyle = o.color || WC.ink;
+  ctx.textAlign = o.align || 'left';
+  ctx.textBaseline = 'alphabetic';
+  const lines = wrLines(ctx, text, o.maxW || (WR_W - 160), o.maxLines || 3);
+  const lh = size * (o.lh || 1.18);
+  lines.forEach((l, i)=>ctx.fillText(l, x, y + i*lh));
+  return y + (lines.length-1)*lh;
+}
+function wrRound(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  if(ctx.roundRect){ ctx.roundRect(x, y, w, h, r); return; }
+  ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
+}
+function wrBg(ctx, top, bottom, glow, gy){
+  const g = ctx.createLinearGradient(0, 0, 0, WR_H);
+  g.addColorStop(0, top); g.addColorStop(1, bottom);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, WR_W, WR_H);
+  if(glow){
+    const r = ctx.createRadialGradient(WR_W/2, gy||WR_H*.3, 0, WR_W/2, gy||WR_H*.3, WR_W);
+    r.addColorStop(0, glow); r.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = r; ctx.fillRect(0, 0, WR_W, WR_H);
+  }
+}
+function wrFrame(ctx, y){
+  wrFont(ctx, 28, 'u', 700); ctx.fillStyle = WC.muted; ctx.textAlign = 'center';
+  ctx.fillText(`OOIT WRAPPED  ·  ${y}`, WR_W/2, 128);
+  wrFont(ctx, 46, 'd'); ctx.fillStyle = 'rgba(244,241,234,.5)';
+  ctx.fillText('Ooit', WR_W/2, WR_H-86);
+}
+function wrAvatar(ctx, k, x, y, r){
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = WC[k]; ctx.fill();
+  wrFont(ctx, Math.round(r*.9), 'u', 700); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(initial(k), x, y + r*.04); ctx.textBaseline = 'alphabetic';
+}
+function wrCover(ctx, img, x, y, w, h, r){
+  ctx.save(); wrRound(ctx, x, y, w, h, r); ctx.clip();
+  const s = Math.max(w/img.width, h/img.height), iw = img.width*s, ih = img.height*s;
+  ctx.drawImage(img, x+(w-iw)/2, y+(h-ih)/2, iw, ih);
+  ctx.restore();
+}
+function wrPlaceholder(ctx, item, x, y, w, h, r){
+  const p = P[item.pal] || P.dawn;
+  ctx.save(); wrRound(ctx, x, y, w, h, r); ctx.clip();
+  const g = ctx.createLinearGradient(0, y, 0, y+h); g.addColorStop(0, p[0]); g.addColorStop(1, p[1]);
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+  ctx.beginPath(); ctx.arc(x+w/2, y+h*.55, Math.min(w, h)*.2, 0, Math.PI*2); ctx.fillStyle = p[2]; ctx.fill();
+  ctx.fillStyle = p[3]; ctx.fillRect(x, y+h*.72, w, h*.28);
+  ctx.restore();
+}
+function artSvg(item){
+  const u = ++uid, p = P[item.pal] || P.dawn, fn = M[item.motif] || M.sun, r = rng(hash(item.id));
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 125" width="400" height="500" preserveAspectRatio="xMidYMid slice">${fn(p, r, u)}</svg>`;
+}
+function wrArtImage(item){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=>resolve(img); img.onerror = reject;
+    img.src = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(artSvg(item));
+  });
+}
+async function wrArt(ctx, item, x, y, w, h, r, opt){
+  if(opt && opt.art){
+    try{ wrCover(ctx, await wrArtImage(item), x, y, w, h, r); return; }catch(err){}
+  }
+  wrPlaceholder(ctx, item, x, y, w, h, r);
+}
+function withTimeout(p, ms){ return Promise.race([p, new Promise((_, rej)=>setTimeout(()=>rej(new Error('timeout')), ms))]); }
+async function wrBitmap(url){
+  const res = await withTimeout(fetch(url, {mode:'cors', credentials:'omit'}), 8000);
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await createImageBitmap(await res.blob());
+}
+async function wrPhotoUrls(paths){
+  const need = paths.filter(p=>{ const c = signed[p]; return !c || c.exp < Date.now()+60000; });
+  if(need.length && sb){
+    try{
+      const {data} = await sb.storage.from('photos').createSignedUrls(need, 3600);
+      (data||[]).forEach(d=>{ if(d && d.signedUrl && d.path) signed[d.path] = {url:d.signedUrl, exp:Date.now()+3500*1000}; });
+    }catch(err){ console.error(err); }
+  }
+  return paths.map(p=>signed[p] ? signed[p].url : null);
+}
+async function wrFonts(){
+  if(!document.fonts || !document.fonts.load) return;
+  try{
+    await withTimeout(Promise.all([
+      document.fonts.load(`400 100px ${WF.d}`), document.fonts.load(`700 40px ${WF.u}`),
+      document.fonts.load(`600 40px ${WF.u}`), document.fonts.load(`400 40px ${WF.u}`)
+    ]), 3000);
+  }catch(err){}
+}
+
+/* De schermen */
+function buildSlides(y, items){
+  const slides = [];
+  const oa = other('a');
+  slides.push({alt:`Ooit Wrapped ${y}`, draw: async ctx=>{
+    wrBg(ctx, '#2B3350', '#0E1016', 'rgba(240,180,78,.26)', 640);
+    wrFrame(ctx, y);
+    wrAvatar(ctx, 'a', WR_W/2 - 78, 640, 128);
+    wrAvatar(ctx, 'b', WR_W/2 + 78, 640, 128);
+    ctx.beginPath(); ctx.arc(WR_W/2 - 78, 640, 128, 0, Math.PI*2); ctx.lineWidth = 10; ctx.strokeStyle = '#1B2033'; ctx.stroke();
+    wrAvatar(ctx, 'a', WR_W/2 - 78, 640, 124);
+    wrText(ctx, 'Jullie', WR_W/2, 980, {size:110, fam:'d', align:'center'});
+    wrText(ctx, String(y), WR_W/2, 1260, {size:300, fam:'d', align:'center', color:WC.gold});
+    wrText(ctx, `Het jaar van ${nm('a')} en ${nm(oa)}`, WR_W/2, 1400, {size:46, align:'center', color:WC.muted, maxW:880, maxLines:2});
+  }});
+
+  slides.push({alt:`${items.length} ervaringen beleefd`, draw: async ctx=>{
+    wrBg(ctx, '#3A2E55', '#12111B', 'rgba(196,87,126,.22)', 720);
+    wrFrame(ctx, y);
+    wrText(ctx, 'Dit jaar beleefden jullie', WR_W/2, 380, {size:74, fam:'d', align:'center', maxW:900, maxLines:2});
+    wrText(ctx, String(items.length), WR_W/2, 900, {size:440, fam:'d', align:'center', color:WC.gold});
+    wrText(ctx, items.length===1 ? 'ervaring' : 'ervaringen', WR_W/2, 1010, {size:58, align:'center', weight:600});
+    const byCat = {};
+    items.forEach(x=>{ const c = x.item.cat; byCat[c] = (byCat[c]||0)+1; });
+    const rows = Object.keys(byCat).sort((a,b)=>byCat[b]-byCat[a]).slice(0, 5);
+    const max = Math.max(...rows.map(k=>byCat[k]));
+    let yy = 1170;
+    rows.forEach(k=>{
+      const c = CAT[k] || CAT.eigen;
+      wrText(ctx, c.name, 110, yy, {size:38, weight:600, maxW:600, maxLines:1});
+      wrText(ctx, String(byCat[k]), WR_W-110, yy, {size:38, weight:700, align:'right', color:WC.muted});
+      ctx.fillStyle = WC.faint; wrRound(ctx, 110, yy+22, WR_W-220, 16, 8); ctx.fill();
+      ctx.fillStyle = c.color; wrRound(ctx, 110, yy+22, Math.max(16, (WR_W-220)*byCat[k]/max), 16, 8); ctx.fill();
+      yy += 104;
+    });
+    const first = items[0];
+    wrText(ctx, `Het begon in ${MONTHS[new Date(livedDate(first.e)).getMonth()]} met ${first.item.title.charAt(0).toLowerCase()+first.item.title.slice(1)}.`, WR_W/2, Math.max(yy+50, 1700), {size:36, align:'center', color:WC.muted, maxW:880, maxLines:2});
+  }});
+
+  const withPhotos = items.slice().reverse().filter(x=>{ const ph = livePhotos(x.e)[0]; return ph && photoPath(x.e, ph); }).slice(0, 6);
+  if(withPhotos.length) slides.push({alt:'Jullie momenten', draw: async (ctx, opt)=>{
+    wrBg(ctx, '#161A23', '#07080B');
+    wrFrame(ctx, y);
+    wrText(ctx, 'Jullie momenten', WR_W/2, 280, {size:84, fam:'d', align:'center'});
+    const paths = withPhotos.map(x=>photoPath(x.e, livePhotos(x.e)[0]));
+    const urls = await wrPhotoUrls(paths);
+    const imgs = await Promise.all(urls.map(u=>u ? wrBitmap(u).catch(()=>null) : null));
+    const n = withPhotos.length, X = 70, Y = 350, W = WR_W-140, H = 1400, G = 22;
+    const cells = [];
+    if(n===1) cells.push([X, Y, W, H]);
+    else if(n===2){ const h = (H-G)/2; cells.push([X, Y, W, h], [X, Y+h+G, W, h]); }
+    else if(n===3){ const h1 = H*.56, h2 = H-h1-G, w = (W-G)/2; cells.push([X, Y, W, h1], [X, Y+h1+G, w, h2], [X+w+G, Y+h1+G, w, h2]); }
+    else { const rows = n===4 ? 2 : 3, cols = 2, w = (W-G)/2, h = (H-G*(rows-1))/rows;
+      for(let i=0;i<n;i++){ const r = Math.floor(i/cols), c = i%cols; const last = i===n-1 && n%2===1; cells.push([X + c*(w+G), Y + r*(h+G), last ? W : w, h]); } }
+    for(let i=0;i<n;i++){
+      const [x, yy, w, h] = cells[i], it = withPhotos[i].item;
+      if(imgs[i]) wrCover(ctx, imgs[i], x, yy, w, h, 34); else await wrArt(ctx, it, x, yy, w, h, 34, opt);
+      ctx.save(); wrRound(ctx, x, yy, w, h, 34); ctx.clip();
+      const g = ctx.createLinearGradient(0, yy+h-170, 0, yy+h); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.62)');
+      ctx.fillStyle = g; ctx.fillRect(x, yy+h-170, w, 170); ctx.restore();
+      wrText(ctx, it.title, x+30, yy+h-34, {size: w > 600 ? 38 : 30, weight:600, maxW:w-60, maxLines:1});
+    }
+  }});
+
+  const words = items.filter(x=>{ const m = x.e.memory || {}; return (m.a && m.a.word) || (m.b && m.b.word); })
+    .sort((a,b)=>{ const f = x=>{ const m = x.e.memory; return (m.a && m.a.word ? 1 : 0) + (m.b && m.b.word ? 1 : 0); }; return f(b)-f(a); }).slice(0, 4);
+  if(words.length) slides.push({alt:'In een woord of zin', draw: async ctx=>{
+    wrBg(ctx, '#1D2233', '#0B0D13', 'rgba(63,99,181,.2)', 400);
+    wrFrame(ctx, y);
+    wrText(ctx, 'In een woord of zin', WR_W/2, 290, {size:80, fam:'d', align:'center'});
+    wrText(ctx, 'Wat jullie opschreven, naast elkaar.', WR_W/2, 370, {size:38, align:'center', color:WC.muted});
+    let yy = 520;
+    const per = Math.min(330, (1680 - yy) / words.length);
+    words.forEach(x=>{
+      const m = x.e.memory || {};
+      wrText(ctx, x.item.title.toUpperCase(), 100, yy, {size:26, weight:700, color:WC.muted, maxW:880, maxLines:1});
+      const colW = (WR_W-200-40)/2;
+      ['a','b'].forEach((k, i)=>{
+        const cx = 100 + i*(colW+40);
+        wrAvatar(ctx, k, cx+26, yy+62, 26);
+        const w = m[k] && m[k].word;
+        wrText(ctx, w ? w : 'Nog niets ingevuld', cx+70, yy+78, {size: w ? (w.length > 26 ? 38 : 50) : 32, fam: w ? 'd' : 'u', color: w ? WC.ink : WC.muted, maxW:colW-70, maxLines: per > 280 ? 4 : 3, lh:1.12});
+      });
+      yy += per;
+    });
+  }});
+
+  const both = items.filter(x=>{ const m = x.e.memory || {}; return m.a && m.b && m.a.again==='again' && m.b.again==='again'; });
+  const one = items.filter(x=>{ const m = x.e.memory || {}; return both.indexOf(x)===-1 && ((m.a && m.a.again==='again') || (m.b && m.b.again==='again')); });
+  const again = (both.length ? both : one).slice(0, 3);
+  if(again.length) slides.push({alt: both.length ? 'Allebei meteen weer' : 'Voor herhaling vatbaar', draw: async (ctx, opt)=>{
+    wrBg(ctx, '#3B1A1F', '#110B0E', 'rgba(240,180,78,.18)', 360);
+    wrFrame(ctx, y);
+    wrText(ctx, both.length ? 'Allebei: meteen weer' : 'Voor herhaling vatbaar', WR_W/2, 300, {size:80, fam:'d', align:'center', maxW:920, maxLines:2});
+    wrText(ctx, both.length ? 'Hier zouden jullie morgen weer voor tekenen.' : 'Minstens een van jullie wil hier terug.', WR_W/2, 390, {size:38, align:'center', color:WC.muted});
+    let yy = 500;
+    const h = again.length===1 ? 820 : 360;
+    for(const x of again){
+      if(again.length===1){
+        await wrArt(ctx, x.item, 190, yy, 700, 870, 40, opt);
+        wrText(ctx, x.item.title, WR_W/2, yy+970, {size:64, fam:'d', align:'center', maxW:900, maxLines:2});
+      } else {
+        await wrArt(ctx, x.item, 100, yy, 260, 325, 28, opt);
+        wrText(ctx, x.item.title, 400, yy+120, {size:52, fam:'d', maxW:580, maxLines:3});
+        const m = x.e.memory || {};
+        const who = ['a','b'].filter(k=>m[k] && m[k].again==='again').map(nm).join(' en ');
+        wrText(ctx, `${who}: meteen weer`, 400, yy+300, {size:32, weight:600, color:WC.gold, maxW:580, maxLines:1});
+      }
+      yy += h + 40;
+    }
+  }});
+
+  const placed = items.map(x=>Object.assign({ll:placeOf(x.id, x.e)}, x)).filter(x=>x.ll);
+  if(placed.length) slides.push({alt:'Waar we waren', draw: async ctx=>{
+    wrBg(ctx, '#0E1420', '#07080B');
+    wrFrame(ctx, y);
+    wrText(ctx, 'Waar we waren', WR_W/2, 280, {size:84, fam:'d', align:'center'});
+    const uniq = new Set(placed.map(x=>x.ll.join(','))).size;
+    wrText(ctx, uniq===1 ? `1 plek in ${y}` : `${uniq} plekken in ${y}`, WR_W/2, 360, {size:40, align:'center', color:WC.muted});
+    await wrMap(ctx, placed.map(x=>x.ll), 60, 430, WR_W-120, 1060);
+    let yy = 1590;
+    placed.slice(0, 4).forEach(x=>{
+      ctx.beginPath(); ctx.arc(118, yy-12, 10, 0, Math.PI*2); ctx.fillStyle = WC.gold; ctx.fill();
+      wrText(ctx, x.item.title, 146, yy, {size:34, weight:600, maxW:820, maxLines:1});
+      yy += 54;
+    });
+    if(placed.length > 4) wrText(ctx, `en nog ${placed.length-4}`, 146, yy, {size:30, color:WC.muted});
+  }});
+
+  slides.push({alt:`Op naar ${y+1}`, draw: async ctx=>{
+    wrBg(ctx, '#2B3350', '#0E1016', 'rgba(240,180,78,.22)', 820);
+    wrFrame(ctx, y);
+    wrText(ctx, 'Op naar', WR_W/2, 640, {size:120, fam:'d', align:'center'});
+    wrText(ctx, String(y+1), WR_W/2, 920, {size:300, fam:'d', align:'center', color:WC.gold});
+    const todo = listItems().filter(x=>!x.e.lived && !isHidden(x.id, x.e));
+    wrText(ctx, todo.length ? `Nog ${todo.length} ${todo.length===1?'ervaring':'ervaringen'} op jullie lijst.` : 'Tijd voor nieuwe plannen.', WR_W/2, 1070, {size:46, align:'center', color:WC.muted, maxW:900});
+    const r = rng(hash('next'+y));
+    const pick = todo.map(x=>({x, k:(x.e.for==='both' && (x.e.wants||{}).a && (x.e.wants||{}).b ? 1 : 0) + r()})).sort((a,b)=>b.k-a.k).slice(0, 3).map(o=>o.x);
+    let yy = 1230;
+    if(pick.length) wrText(ctx, 'Wat wordt de eerste?', WR_W/2, yy, {size:34, weight:700, align:'center', color:WC.gold});
+    yy += 90;
+    pick.forEach(x=>{ wrText(ctx, x.item.title, WR_W/2, yy, {size:48, fam:'d', align:'center', maxW:900, maxLines:2}); yy += 110; });
+  }});
+  return slides;
+}
+
+// Kaartje voor "Waar we waren". Probeert kaarttegels te laden en valt terug
+// op een eenvoudig raster als dat niet lukt.
+async function wrMap(ctx, lls, X, Y, W, H){
+  const S2 = 2, T = 256;
+  const proj = (ll, z)=>{ const n = T*Math.pow(2, z), s = Math.sin(ll[0]*Math.PI/180);
+    return [(ll[1]+180)/360*n, (0.5 - Math.log((1+s)/(1-s))/(4*Math.PI))*n]; };
+  let z = 11;
+  for(; z > 1; z--){
+    const ps = lls.map(ll=>proj(ll, z));
+    const dx = Math.max(...ps.map(p=>p[0])) - Math.min(...ps.map(p=>p[0]));
+    const dy = Math.max(...ps.map(p=>p[1])) - Math.min(...ps.map(p=>p[1]));
+    if(dx*S2 <= W-260 && dy*S2 <= H-260) break;
+  }
+  if(lls.length===1) z = Math.min(z, 7);
+  const ps = lls.map(ll=>proj(ll, z));
+  const cx = (Math.max(...ps.map(p=>p[0])) + Math.min(...ps.map(p=>p[0])))/2;
+  const cy = (Math.max(...ps.map(p=>p[1])) + Math.min(...ps.map(p=>p[1])))/2;
+  const ox = cx - W/(2*S2), oy = cy - H/(2*S2), N = Math.pow(2, z);
+  ctx.save(); wrRound(ctx, X, Y, W, H, 40); ctx.clip();
+  ctx.fillStyle = '#131A28'; ctx.fillRect(X, Y, W, H);
+  let tilesOk = false;
+  try{
+    const jobs = [];
+    for(let tx = Math.floor(ox/T); tx <= Math.floor((ox + W/S2)/T); tx++){
+      for(let ty = Math.floor(oy/T); ty <= Math.floor((oy + H/S2)/T); ty++){
+        if(ty < 0 || ty >= N) continue;
+        const wx = ((tx % N) + N) % N;
+        const url = `https://${'abcd'[(wx+ty)%4]}.basemaps.cartocdn.com/dark_all/${z}/${wx}/${ty}@2x.png`;
+        jobs.push(wrBitmap(url).then(img=>({img, x: X + (tx*T - ox)*S2, y: Y + (ty*T - oy)*S2})));
+      }
+    }
+    const tiles = await withTimeout(Promise.all(jobs), 9000);
+    tiles.forEach(t=>ctx.drawImage(t.img, t.x, t.y, T*S2, T*S2));
+    tilesOk = true;
+  }catch(err){ console.warn('Kaarttegels niet geladen, eenvoudige kaart', err); }
+  if(!tilesOk){
+    ctx.strokeStyle = 'rgba(244,241,234,.07)'; ctx.lineWidth = 2;
+    for(let gx = X; gx < X+W; gx += 80){ ctx.beginPath(); ctx.moveTo(gx, Y); ctx.lineTo(gx, Y+H); ctx.stroke(); }
+    for(let gy = Y; gy < Y+H; gy += 80){ ctx.beginPath(); ctx.moveTo(X, gy); ctx.lineTo(X+W, gy); ctx.stroke(); }
+  }
+  ps.forEach(p=>{
+    const x = X + (p[0]-ox)*S2, y = Y + (p[1]-oy)*S2;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 70); g.addColorStop(0, 'rgba(240,180,78,.55)'); g.addColorStop(1, 'rgba(240,180,78,0)');
+    ctx.fillStyle = g; ctx.fillRect(x-70, y-70, 140, 140);
+    ctx.beginPath(); ctx.arc(x, y, 17, 0, Math.PI*2); ctx.fillStyle = WC.gold; ctx.fill();
+    ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.stroke();
+  });
+  ctx.restore();
+  if(tilesOk){ wrFont(ctx, 20, 'u', 600); ctx.fillStyle = 'rgba(244,241,234,.55)'; ctx.textAlign = 'right'; ctx.fillText('© OpenStreetMap © CARTO', X+W-24, Y+H-22); }
+}
+
+/* De viewer */
+let wr = null;
+function wrBlob(canvas){ return new Promise(resolve=>{ try{ canvas.toBlob(b=>resolve(b), 'image/jpeg', .9); }catch(err){ resolve(null); } }); }
+function wrRender(k){
+  const cur = wr;
+  if(cur.cache[k]) return cur.cache[k];
+  cur.cache[k] = (async()=>{
+    const paint = async opt=>{
+      const c = document.createElement('canvas'); c.width = WR_W; c.height = WR_H;
+      try{ await cur.slides[k].draw(c.getContext('2d'), opt); }catch(err){ console.error(err); }
+      return wrBlob(c);
+    };
+    // Zou een tekening het canvas blokkeren, dan opnieuw zonder illustraties.
+    const blob = (await paint({art:true})) || (await paint({art:false}));
+    const url = blob ? URL.createObjectURL(blob) : '';
+    if(url) cur.urls.push(url);
+    return {blob, url};
+  })();
+  return cur.cache[k];
+}
+async function openWrapped(y){
+  if(needMe()) return;
+  const items = livedIn(y);
+  if(!items.length){ toast(`In ${y} is nog niets beleefd`); return; }
+  if(wr) closeWrapped(true);
+  wr = {year:y, slides:buildSlides(y, items), i:0, cache:{}, urls:[], prog:0, paused:false, ready:false, last:0, res:null, holdAt:0, held:false};
+  wrEl.innerHTML = `<div class="wr-bars">${wr.slides.map(()=>'<i><b></b></i>').join('')}</div>
+    <button class="icon-btn close" data-action="closewrapped" aria-label="Sluiten">${I.close}</button>
+    <div class="wr-stage" id="wrStage"><img id="wrImg" alt=""><p class="wr-load" id="wrLoad">Even geduld</p>
+      <button class="wr-tap prev" data-action="wrprev" aria-label="Vorig scherm"></button><button class="wr-tap next" data-action="wrnext" aria-label="Volgend scherm"></button></div>
+    <div class="wr-cta"><button class="btn gold small" data-action="wrsave">${I.share}Bewaar of deel dit scherm</button></div>`;
+  openLayer(wrEl);
+  const stage = $('#wrStage');
+  stage.addEventListener('pointerdown', ()=>{ if(!wr) return; wr.holdAt = Date.now(); wr.held = false; wr.paused = true; });
+  const up = ()=>{ if(!wr) return; wr.held = Date.now() - wr.holdAt > 300; wr.paused = false; };
+  stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up); stage.addEventListener('pointerleave', ()=>{ if(wr && wr.paused && wr.holdAt) up(); });
+  await wrFonts();
+  if(!wr) return;
+  wrShow(0);
+  wr.last = performance.now();
+  wr.raf = requestAnimationFrame(wrTick);
+}
+async function wrShow(k){
+  if(!wr) return;
+  const cur = wr;
+  cur.i = Math.max(0, Math.min(cur.slides.length-1, k));
+  cur.prog = 0; cur.ready = false; cur.res = null;
+  wrBars();
+  const load = $('#wrLoad'); if(load) load.hidden = false;
+  const idx = cur.i;
+  const res = await wrRender(idx);
+  if(wr !== cur || cur.i !== idx) return;
+  const img = $('#wrImg');
+  if(img){ img.src = res.url; img.alt = cur.slides[idx].alt; }
+  if(load) load.hidden = true;
+  cur.res = res; cur.ready = true; cur.last = performance.now();
+  if(idx+1 < cur.slides.length) wrRender(idx+1);
+}
+function wrBars(){
+  if(!wr) return;
+  wrEl.querySelectorAll('.wr-bars b').forEach((b, j)=>{ b.style.width = j < wr.i ? '100%' : (j===wr.i ? Math.round(wr.prog*100)+'%' : '0%'); });
+}
+function wrTick(now){
+  if(!wr) return;
+  if(wr.ready && !wr.paused && !reduced()) wr.prog += (now - wr.last)/WR_MS;
+  wr.last = now;
+  if(wr.prog >= 1){
+    if(wr.i < wr.slides.length-1) wrShow(wr.i+1);
+    else wr.prog = 1;
+  }
+  wrBars();
+  wr.raf = requestAnimationFrame(wrTick);
+}
+function wrStep(d){
+  if(!wr) return;
+  if(wr.held){ wr.held = false; return; }
+  if(d > 0 && wr.i === wr.slides.length-1){ closeWrapped(); return; }
+  wrShow(wr.i + d);
+}
+function wrSave(){
+  if(!wr || !wr.res || !wr.res.blob) return;
+  const name = `ooit-${wr.year}-${wr.i+1}.jpg`;
+  const file = new File([wr.res.blob], name, {type:'image/jpeg'});
+  wr.paused = true;
+  const resume = ()=>{ if(wr) wr.paused = false; };
+  if(navigator.canShare && navigator.share && navigator.canShare({files:[file]})){
+    navigator.share({files:[file], title:`Ooit ${wr.year}`}).then(resume, err=>{
+      resume();
+      if(err && err.name !== 'AbortError') toast('Delen lukte niet. Houd je vinger op de afbeelding om hem te bewaren.');
+    });
+    return;
+  }
+  const a = document.createElement('a'); a.href = wr.res.url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('Afbeelding opgeslagen. Op een telefoon kun je ook je vinger op de afbeelding houden.');
+  resume();
+}
+function closeWrapped(quick){
+  if(!wr) return;
+  cancelAnimationFrame(wr.raf);
+  const urls = wr.urls; wr = null;
+  if(!quick) closeLayer(wrEl);
+  setTimeout(()=>urls.forEach(u=>URL.revokeObjectURL(u)), 600);
 }
 
 /* ---------- Tabs ---------- */
 function setTab(t){
-  const isList = t==='mylist';
-  browse.hidden = isList; mylist.hidden = !isList;
+  const screens = {browse, mylist, map:mapScreen};
+  if(!screens[t]) t = 'browse';
+  Object.keys(screens).forEach(k=>{ screens[k].hidden = k!==t; });
   document.querySelectorAll('.tab[data-tab]').forEach(b=>{ if(b.dataset.tab===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
-  if(!isList) listEdit = false;
-  if(isList){ renderList(); mylist.scrollTop = 0; } else renderBrowse();
+  if(t!=='mylist') listEdit = false;
+  if(t==='mylist'){ renderList(); mylist.scrollTop = 0; }
+  else if(t==='map') showMap();
+  else renderBrowse();
 }
 
 /* ---------- Events ---------- */
@@ -1637,20 +2673,15 @@ app.addEventListener('click', ev=>{
   if((el = hit('[data-memory]'))){ openMemory(el.dataset.memory, false); return; }
   if((el = hit('[data-again]'))){ memAgain = memAgain===el.dataset.again ? null : el.dataset.again; memoryEl.querySelectorAll('[data-again]').forEach(b=>b.setAttribute('aria-checked', b.dataset.again===memAgain)); return; }
   if((el = hit('[data-photo]'))){ openLightbox(el.dataset.photo, el.dataset.photoitem); return; }
-  if((el = hit('[data-pick]'))){ pickCard(el); return; }
-  if((el = hit('[data-drawadd]'))){
-    const id = el.dataset.drawadd;
-    if(!S.entries[id] && !needMe()){
-      const item = getItem(id), start = relRect(el), addBtn = el;
-      openPicker({title:item.title, onPick:(who, sp)=>{
-        addEntry(id, who, start, null, sp);
-        addBtn.textContent='Staat op jullie lijst';
-        addBtn.disabled = true;
-      }});
-    }
-    return;
-  }
-  if((el = hit('[data-drawopen]'))){ closeLayer(draw); openSheet(el.dataset.drawopen); return; }
+  if((el = hit('[data-swipe]'))){ commitSwipe(el.dataset.swipe); return; }
+  if((el = hit('[data-newcard]'))){ openCardForm({title:el.dataset.newcard}); return; }
+  if((el = hit('[data-cardedit]'))){ openCardForm({id:el.dataset.cardedit}); return; }
+  if((el = hit('[data-cardcat]'))){ if(cardEdit){ cardEdit.cat = el.dataset.cardcat; editorEl.querySelectorAll('[data-cardcat]').forEach(b=>b.setAttribute('aria-pressed', b===el)); } return; }
+  if((el = hit('[data-cardeffort]'))){ if(cardEdit){ cardEdit.effort = el.dataset.cardeffort; editorEl.querySelectorAll('[data-cardeffort]').forEach(b=>b.setAttribute('aria-pressed', b===el)); } return; }
+  if((el = hit('[data-place]'))){ pickPlaceFor(el.dataset.place); return; }
+  if((el = hit('[data-placefor]'))){ const id = el.dataset.placefor; closeLayer(pickerEl); setTimeout(()=>pickPlaceFor(id), 200); return; }
+  if((el = hit('[data-mapitem]'))){ const id = el.dataset.mapitem; closeLayer(pickerEl); showMapCard(id); return; }
+  if((el = hit('[data-wrapped]'))){ openWrapped(Number(el.dataset.wrapped)); return; }
   if((el = hit('[data-matchopen]'))){ closeLayer(matchEl); openSheet(el.dataset.matchopen); return; }
   if((el = hit('[data-own]'))){ addOwn(el.dataset.own); return; }
   if((el = hit('[data-listview]'))){ listView = el.dataset.listview; renderList(); return; }
@@ -1664,9 +2695,23 @@ app.addEventListener('click', ev=>{
   if((el = hit('[data-tab]'))){ if(sheet.classList.contains('show')) closeLayer(sheet); setTab(el.dataset.tab); return; }
   if((el = hit('[data-action]'))){
     const a = el.dataset.action;
-    if(a==='draw'){ if(sheet.classList.contains('show')) closeLayer(sheet); openDraw(); }
-    else if(a==='redraw') openDraw();
-    else if(a==='closedraw') closeLayer(draw);
+    if(a==='swipe'){ if(sheet.classList.contains('show')) closeLayer(sheet); openSwipe(); }
+    else if(a==='closeswipe'){ closeLayer(swipeEl); lastSwipe = null; }
+    else if(a==='swipeundo') swipeUndo();
+    else if(a==='swipereset') swipeReset();
+    else if(a==='noplace') showNoPlace();
+    else if(a==='placesave') placeFinish(placePick, false);
+    else if(a==='placecancel') placeFinish(null, true);
+    else if(a==='placeclear') placeFinish(null, false);
+    else if(a==='placehere') placeHere(el);
+    else if(a==='memplace'){ const it = getItem(memId); if(it) openPlacePicker({heading:'Waar was het?', title:it.title, current:memPlace, hint:validLL(it.ll), allowClear:!!memPlace, onDone: ll=>{ memPlace = ll; memPlaceSet = true; renderMemPlace(); }}); }
+    else if(a==='cardplace'){ if(cardEdit){ const t = (($('#cd_title')||{}).value||'').trim(); openPlacePicker({heading:'Waar is het?', title:t || 'Eigen kaart', current:cardEdit.ll, allowClear:!!cardEdit.ll, onDone: ll=>{ if(cardEdit){ cardEdit.ll = ll; renderCardPlace(); } }}); } }
+    else if(a==='savecard') saveCard();
+    else if(a==='deletecard') deleteCard(el);
+    else if(a==='closewrapped') closeWrapped();
+    else if(a==='wrprev') wrStep(-1);
+    else if(a==='wrnext') wrStep(1);
+    else if(a==='wrsave') wrSave();
     else if(a==='dice'){ if(sheet.classList.contains('show')) closeLayer(sheet); openDice(); }
     else if(a==='closedice') closeLayer(dice);
     else if(a==='roll') rollDice();
@@ -1714,14 +2759,18 @@ backdrop.addEventListener('click', ()=>{
   if(sheet.classList.contains('show')) closeLayer(sheet);
 });
 document.addEventListener('keydown', ev=>{
+  if(wrEl.classList.contains('show') && (ev.key==='ArrowRight' || ev.key==='ArrowLeft')){ wrStep(ev.key==='ArrowRight' ? 1 : -1); return; }
+  if(swipeEl.classList.contains('show') && !matchEl.classList.contains('show') && (ev.key==='ArrowRight' || ev.key==='ArrowLeft')){ commitSwipe(ev.key==='ArrowRight' ? 'right' : 'left'); return; }
   if(ev.key==='Escape'){
-    if(lightbox.classList.contains('show')) closeLayer(lightbox);
+    if(placeEl.classList.contains('show')) placeFinish(null, true);
+    else if(wrEl.classList.contains('show')) closeWrapped();
+    else if(lightbox.classList.contains('show')) closeLayer(lightbox);
     else if(matchEl.classList.contains('show')) closeLayer(matchEl);
     else if(editorEl.classList.contains('show')) closeLayer(editorEl);
     else if(memoryEl.classList.contains('show')) closeLayer(memoryEl);
     else if(gateEl.classList.contains('show')){ if(!gateForced) closeLayer(gateEl); }
     else if(pickerEl.classList.contains('show')){ pickCtx=null; closeLayer(pickerEl); }
-    else if(draw.classList.contains('show')) closeLayer(draw);
+    else if(swipeEl.classList.contains('show')) closeLayer(swipeEl);
     else if(dice.classList.contains('show')) closeLayer(dice);
     else if(sheet.classList.contains('show')) closeLayer(sheet);
   }

@@ -27,9 +27,10 @@
     <div class="navbar" id="nav">
       <button class="couple" data-action="who" id="coupleBtn" aria-label="Profiel"></button>
       <span class="nav-mini" aria-hidden="true">Ooit</span>
-      <button class="icon-btn" data-action="draw" aria-label="Verras ons">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.5c2.5 0 3.5 1.5 5 5s2.5 5 5 5H21"/><path d="M3 17h3.5c1.3 0 2.1-.4 2.8-1.2"/><path d="M14.7 8.2c.7-.8 1.5-1.2 2.8-1.2H21"/><path d="M18 4l3 3-3 3"/><path d="M18 14l3 3-3 3"/></svg>
-      </button>
+      <div class="nav-actions">
+        <button class="icon-btn" data-action="dice" aria-label="Dobbel de dag"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="8.6" cy="8.6" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.4" cy="8.6" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="8.6" cy="15.4" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.4" fill="currentColor" stroke="none"/></svg></button>
+        <button class="icon-btn swipe-btn" data-action="swipe" aria-label="Swipen"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3.5" width="12" height="16" rx="3" transform="rotate(12 13 11.5)"/><rect x="4" y="4.5" width="12" height="16" rx="3" transform="rotate(-8 10 12.5)" fill="var(--chip)"/><path d="M10 15.2s-2.6-1.5-2.6-3.4a1.5 1.5 0 0 1 2.6-1 1.5 1.5 0 0 1 2.6 1c0 1.9-2.6 3.4-2.6 3.4z" fill="currentColor" stroke="none"/></svg><span class="dot-badge" id="swipeBadge" hidden></span></button>
+      </div>
     </div>
     <div class="largetitle">
       <h1>Ooit</h1>
@@ -51,18 +52,29 @@
     <div id="listContent"></div>
   </main>
 
+  <main class="screen map-screen" id="map" aria-label="Onze kaart" hidden>
+    <div class="map-el" id="mapEl" aria-label="Wereldkaart met jullie ervaringen"></div>
+    <div class="map-top">
+      <div class="map-title"><h1>Onze kaart</h1><p id="mapCount"></p></div>
+      <div class="map-legend" aria-hidden="true"><span><i class="pin grey"></i>Te doen</span><span><i class="pin gold"></i>Beleefd</span></div>
+    </div>
+    <button class="map-noplace" id="mapNoPlace" data-action="noplace" hidden></button>
+    <div class="map-card" id="mapCard" hidden></div>
+    <p class="map-msg" id="mapMsg" hidden></p>
+  </main>
+
   <nav class="tabbar" aria-label="Hoofdmenu">
     <button class="tab" data-tab="browse" aria-current="page">
       <span class="tab-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="8.5" rx="2"/><rect x="13.5" y="3.5" width="7" height="8.5" rx="2"/><rect x="3.5" y="15" width="7" height="5.5" rx="2"/><rect x="13.5" y="15" width="7" height="5.5" rx="2"/></svg></span>
       Ontdekken
     </button>
-    <button class="tab" data-action="dice">
-      <span class="tab-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="8.6" cy="8.6" r="1.35" fill="currentColor" stroke="none"/><circle cx="15.4" cy="8.6" r="1.35" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="8.6" cy="15.4" r="1.35" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.35" fill="currentColor" stroke="none"/></svg></span>
-      Dobbel de dag
-    </button>
     <button class="tab" data-tab="mylist">
       <span class="tab-icon" id="listIcon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 20s-7.5-4.4-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.6-7.5 10-7.5 10z"/></svg><span class="badge" id="badge" hidden>0</span></span>
       Onze lijst
+    </button>
+    <button class="tab" data-tab="map">
+      <span class="tab-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M9 4.5 3.5 6.8v12.7L9 17.2l6 2.3 5.5-2.3V4.5L15 6.8z"/><path d="M9 4.5v12.7M15 6.8v12.7"/></svg></span>
+      Kaart
     </button>
   </nav>
 
@@ -74,7 +86,9 @@
   <section class="sheet" id="memory" role="dialog" aria-modal="true" aria-labelledby="memTitle" hidden style="z-index:58"></section>
   <section class="sheet" id="editor" role="dialog" aria-modal="true" aria-labelledby="edTitle" hidden style="z-index:58"></section>
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Foto" hidden></div>
-  <section class="draw" id="draw" role="dialog" aria-modal="true" aria-label="Verras ons" hidden></section>
+  <section class="draw swipe" id="swipe" role="dialog" aria-modal="true" aria-label="Swipen" hidden></section>
+  <section class="place" id="place" role="dialog" aria-modal="true" aria-label="Plek kiezen" hidden></section>
+  <section class="wrapped" id="wrapped" role="dialog" aria-modal="true" aria-label="Ooit Wrapped" hidden></section>
   <section class="draw dice" id="dice" role="dialog" aria-modal="true" aria-label="Dobbel de dag" hidden></section>
   <section class="match" id="match" role="dialog" aria-modal="true" aria-label="Match" hidden></section>
 </div>

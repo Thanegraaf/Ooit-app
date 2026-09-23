@@ -9,6 +9,8 @@ const SHELL = [
   './config.js',
   './manifest.webmanifest',
   './vendor/supabase-2.116.0.js',
+  './vendor/leaflet-1.9.4.js',
+  './vendor/leaflet-1.9.4.css',
   './icons/apple-touch-icon.png',
   './icons/icon-192.png',
   './icons/icon-512.png'
