@@ -181,7 +181,7 @@ Wat het doet:
 
 Wil je Wrapped nu al bekijken, open dan de app met `?wrapped=2026` achter de link, bijvoorbeeld `https://thanegraaf.github.io/Ooit-app/?wrapped=2026`. Dat werkt in een browser waarin je bent ingelogd. Op 1 december om 08:00 krijgen jullie allebei een melding, als meldingen aanstaan.
 
-De kaart gebruikt Leaflet met kaarttegels van CARTO, op basis van OpenStreetMap. Voor een app voor twee personen is dat gratis.
+De kaart gebruikt Leaflet met de kaarttegels van OpenStreetMap. Daar is geen API-sleutel voor nodig en voor een app voor twee personen is het gratis. In donkere modus maakt de app de kaart zelf donker.
 
 ## Updates uitbrengen
 

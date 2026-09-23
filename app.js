@@ -1849,7 +1849,8 @@ function addOwn(title){
 
 /* ---------- Kaart ---------- */
 // Leaflet laadt pas als iemand de kaart opent. De kaarttegels komen van
-// CARTO, op basis van OpenStreetMap.
+// OpenStreetMap. Die werken zonder API-sleutel. In donkere modus maakt de
+// CSS de tegels donker.
 let leafletP = null;
 function loadLeaflet(){
   if(window.L) return Promise.resolve(window.L);
@@ -1863,12 +1864,11 @@ function loadLeaflet(){
   });
   return leafletP;
 }
-const darkMQ = matchMedia('(prefers-color-scheme: dark)');
+const OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 function addTiles(L, m){
-  const style = darkMQ.matches ? 'dark_all' : 'light_all';
-  return L.tileLayer(`https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`, {
-    subdomains:'abcd', maxZoom:19,
-    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  return L.tileLayer(OSM_TILES, {
+    maxZoom:19,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap-bijdragers</a>'
   }).addTo(m);
 }
 function placeOf(id, e){
@@ -1894,7 +1894,6 @@ async function showMap(){
     lLayer = L.layerGroup().addTo(lmap);
     lmap.on('zoomend', drawMarkers);
     lmap.on('click', hideMapCard);
-    if(darkMQ.addEventListener) darkMQ.addEventListener('change', ()=>{ if(lmap && lTiles){ lmap.removeLayer(lTiles); lTiles = addTiles(window.L, lmap); } });
   }
   requestAnimationFrame(()=>{
     if(!lmap) return;
@@ -2474,7 +2473,7 @@ function buildSlides(y, items){
 // Kaartje voor "Waar we waren". Probeert kaarttegels te laden en valt terug
 // op een eenvoudig raster als dat niet lukt.
 async function wrMap(ctx, lls, X, Y, W, H){
-  const S2 = 2, T = 256;
+  const S2 = 1, T = 256;
   const proj = (ll, z)=>{ const n = T*Math.pow(2, z), s = Math.sin(ll[0]*Math.PI/180);
     return [(ll[1]+180)/360*n, (0.5 - Math.log((1+s)/(1-s))/(4*Math.PI))*n]; };
   let z = 11;
@@ -2498,12 +2497,17 @@ async function wrMap(ctx, lls, X, Y, W, H){
       for(let ty = Math.floor(oy/T); ty <= Math.floor((oy + H/S2)/T); ty++){
         if(ty < 0 || ty >= N) continue;
         const wx = ((tx % N) + N) % N;
-        const url = `https://${'abcd'[(wx+ty)%4]}.basemaps.cartocdn.com/dark_all/${z}/${wx}/${ty}@2x.png`;
+        const url = OSM_TILES.replace('{z}', z).replace('{x}', wx).replace('{y}', ty);
         jobs.push(wrBitmap(url).then(img=>({img, x: X + (tx*T - ox)*S2, y: Y + (ty*T - oy)*S2})));
       }
     }
-    const tiles = await withTimeout(Promise.all(jobs), 9000);
+    const tiles = await withTimeout(Promise.all(jobs), 12000);
+    // De tegels zijn licht. Maak ze donker zodat ze bij het scherm passen.
+    const canFilter = 'filter' in ctx;
+    if(canFilter) ctx.filter = 'invert(1) hue-rotate(180deg) brightness(.82) contrast(.9) saturate(.45)';
     tiles.forEach(t=>ctx.drawImage(t.img, t.x, t.y, T*S2, T*S2));
+    if(canFilter) ctx.filter = 'none';
+    else { ctx.fillStyle = 'rgba(12,16,26,.62)'; ctx.fillRect(X, Y, W, H); }
     tilesOk = true;
   }catch(err){ console.warn('Kaarttegels niet geladen, eenvoudige kaart', err); }
   if(!tilesOk){
@@ -2519,7 +2523,7 @@ async function wrMap(ctx, lls, X, Y, W, H){
     ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.stroke();
   });
   ctx.restore();
-  if(tilesOk){ wrFont(ctx, 20, 'u', 600); ctx.fillStyle = 'rgba(244,241,234,.55)'; ctx.textAlign = 'right'; ctx.fillText('© OpenStreetMap © CARTO', X+W-24, Y+H-22); }
+  if(tilesOk){ wrFont(ctx, 20, 'u', 600); ctx.fillStyle = 'rgba(244,241,234,.55)'; ctx.textAlign = 'right'; ctx.fillText('© OpenStreetMap-bijdragers', X+W-24, Y+H-22); }
 }
 
 /* De viewer */

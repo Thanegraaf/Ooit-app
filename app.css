@@ -575,8 +575,13 @@ svg{display:block}
 .pin.cluster.gold{color:var(--gold-ink)}
 .pin.cluster.mix{background:linear-gradient(135deg,var(--gold) 50%,#9AA1AD 50%)}
 .leaflet-container{font-family:var(--ui);background:var(--chip)}
+.leaflet-tile-pane{filter:saturate(.7) contrast(.96)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.88) contrast(.88) saturate(.5)}
+}
+:root[data-theme="dark"] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.88) contrast(.88) saturate(.5)}
 .leaflet-control-attribution{font-size:10px;background:var(--glass)!important;color:var(--ink-2)}
-.leaflet-control-attribution a{color:var(--ink-2)}
+.leaflet-container .leaflet-control-attribution a{color:var(--ink-2)}
 .list-pick{max-height:52vh;overflow-y:auto;margin:0 0 6px}
 .lp-dot{flex:none;width:14px;height:14px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .lp-dot.grey{background:#9AA1AD}
