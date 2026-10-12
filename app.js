@@ -678,6 +678,7 @@ const sheet = $('#sheet'), dice = $('#dice'), backdrop = $('#backdrop');
 const pickerEl = $('#picker'), gateEl = $('#who'), matchEl = $('#match');
 const memoryEl = $('#memory'), editorEl = $('#editor'), lightbox = $('#lightbox');
 const mapScreen = $('#map'), swipeEl = $('#swipe'), placeEl = $('#place'), wrEl = $('#wrapped');
+const bookEl = $('#book');
 const memScreen = $('#memories'), planScreen = $('#planned'), memContent = $('#memContent'), planContent = $('#planContent');
 let ooitView = lsGet('ooit-view')==='ideas' ? 'ideas' : 'list';
 let cat = 'all', query = '', listView = 'todo', listFor = 'all', listEdit = false, lastFocus = null;
@@ -1536,6 +1537,10 @@ function openGate(mode, force){
         <p class="who-err" id="gErr" hidden></p>
         <button class="btn soft block" type="submit" data-action="saveprofile">Naam opslaan</button>
       </form>
+      <form class="together-form" onsubmit="return false">
+        <label>Samen sinds<input id="gTogether" type="date" value="${esc(togetherIso())}" max="${todayIso()}"></label>
+        <button class="btn soft block" type="submit" data-action="savetogether">Datum opslaan</button>
+      </form>
       <div class="push-row" id="pushRow"></div>
       <button class="btn soft block" style="margin-top:10px" data-action="logout">Uitloggen</button>`;
   }
@@ -2327,6 +2332,7 @@ function scheduleWrappedPush(){
 function afterFirstLoad(){
   scheduleWrappedPush();
   scheduleOtdPush();
+  scheduleTogetherPush();
   // Testlink: ?wrapped=2026 opent het overzicht, ook buiten december.
   let y = null;
   try{ y = Number(new URLSearchParams(location.search).get('wrapped')); }catch(err){}
@@ -2952,6 +2958,7 @@ function renderMemories(){
   let h = `<div class="largetitle home-head"><h1>Ooit</h1><p>Wat we deden, wat we plannen en wat we ooit nog willen.</p></div>`;
   if(!S.listReady){ memContent.innerHTML = h + `<div class="loading">Jullie herinneringen worden geladen</div>`; return; }
   h += statusBanner();
+  h += togetherCard();
   h += wrappedBanner();
   const otd = onThisDay();
   otd.slice(0, 3).forEach(x=>{
@@ -2994,7 +3001,7 @@ function renderMemTimeline(){
     if(d.getFullYear() !== year){
       year = d.getFullYear(); month = null;
       const n = list.filter(y=>new Date(livedDate(y.e)).getFullYear()===year).length;
-      h += `<div class="year-head"><h2>${year}</h2><span class="count">${n===1 ? '1 herinnering' : n+' herinneringen'}</span></div>`;
+      h += `<div class="year-head"><h2>${year}</h2><span class="yh-right"><span class="count">${n===1 ? '1 herinnering' : n+' herinneringen'}</span><button class="yh-book" data-book="${year}">Fotoboek</button></span></div>`;
     }
     if(d.getMonth() !== month){ month = d.getMonth(); h += `<h3 class="month-head">${MONTHS[month]}</h3>`; }
     h += memCard(x);
@@ -3176,6 +3183,257 @@ function scheduleOtdPush(){
   });
 }
 
+/* ---------- Jullie jaardag ---------- */
+// De datum staat gedeeld in de tabel entries, onder een eigen sleutel. Die
+// heeft geen kaart, dus de lijst, de kaart en de tijdlijn slaan hem over.
+const SETTINGS_ID = 'ooit-settings';
+const TOGETHER_DEFAULT = '2026-09-15';
+function togetherIso(){
+  const s = S.entries[SETTINGS_ID] && S.entries[SETTINGS_ID].settings;
+  return (s && fromIso(s.together) !== null) ? s.together : TOGETHER_DEFAULT;
+}
+function saveTogether(iso){
+  if(needMe()) return;
+  if(fromIso(iso) === null){ gateError('Kies een datum.'); return; }
+  if(S.entries[SETTINGS_ID]) patchEntry(SETTINGS_ID, {settings:{together:iso}, updatedBy:S.me});
+  else putEntry(SETTINGS_ID, {settings:{together:iso}, updatedBy:S.me});
+  toast('Jullie datum is bewaard');
+}
+const dayMs = 86400000;
+const startAt = () => fromIso(togetherIso());
+function annAt(n){ const d = new Date(startAt()); return new Date(d.getFullYear()+n, d.getMonth(), d.getDate(), 12).getTime(); }
+function daysTogether(){ return Math.round((fromIso(todayIso()) - startAt()) / dayMs); }
+// De eerstvolgende mijlpaal, vandaag meegerekend: een jaardag of een rond
+// aantal van 100 dagen. Vallen ze op dezelfde dag, dan wint de jaardag.
+function nextMilestone(){
+  const today = fromIso(todayIso());
+  let n = new Date(today).getFullYear() - new Date(startAt()).getFullYear();
+  if(n < 1) n = 1;
+  if(annAt(n) < today) n++;
+  const days = daysTogether();
+  const h = Math.max(100, Math.ceil(days / 100) * 100);
+  const hAt = startAt() + h * dayMs;
+  return annAt(n) <= hAt ? {kind:'year', n, at:annAt(n)} : {kind:'days', n:h, at:hAt};
+}
+const yearsLabel = n => n===1 ? '1 jaar' : n+' jaar';
+const milestoneLabel = m => m.kind==='year' ? `${yearsLabel(m.n)} samen` : `${m.n} dagen samen`;
+function togetherCard(){
+  const days = daysTogether();
+  if(days < 0) return '';
+  const m = nextMilestone();
+  const today = fromIso(todayIso());
+  const since = fmtDate(fromIso(togetherIso()));
+  if(m.at === today && days > 0){
+    // De dag zelf: wat jullie sinds de vorige jaardag of mijlpaal deden.
+    const from = m.kind==='year' ? annAt(m.n-1) : startAt() + (m.n-100)*dayMs;
+    const mems = memItems().filter(x=>{ const t = livedDate(x.e); return t >= from && t < today + dayMs; });
+    const photos = mems.map(x=>firstPhoto(x.e)).filter(Boolean).slice(0, 4);
+    return `<div class="together big"><small>Vandaag</small><strong>${esc(milestoneLabel(m))}</strong>
+      <span>Sinds ${esc(since)}. ${mems.length ? `${mems.length === 1 ? '1 herinnering' : mems.length+' herinneringen'} in ${m.kind==='year' ? (m.n===1 ? 'jullie eerste jaar' : 'het afgelopen jaar') : 'die tijd'}.` : 'Tijd om er een herinnering bij te maken.'}</span>
+      ${photos.length ? `<div class="tg-photos">${photos.map(p=>`<span>${imgTag(p, '')}</span>`).join('')}</div>` : ''}</div>`;
+  }
+  const left = Math.round((m.at - today) / dayMs);
+  return `<div class="together"><div class="tg-count"><b>${days}</b><span>${days===1 ? 'dag' : 'dagen'} samen</span></div>
+    <div class="tg-text"><small>Samen sinds ${esc(since)}</small><strong>Nog ${left === 1 ? '1 dag' : left+' dagen'} tot ${esc(milestoneLabel(m))}</strong></div></div>`;
+}
+// Zet een melding klaar voor de eerstvolgende mijlpaal, als die binnen 45 dagen valt.
+function scheduleTogetherPush(){
+  if(daysTogether() < 0) return;
+  const m = nextMilestone();
+  const at = new Date(m.at); at.setHours(9, 0, 0, 0);
+  if(at.getTime() <= Date.now() || at.getTime() - Date.now() > 45*dayMs) return;
+  const key = `ooit-jaardag-${togetherIso()}-${isoDate(m.at)}`;
+  if(lsGet(key)) return;
+  const body = m.kind==='year' ? `Kijk terug op ${m.n===1 ? 'jullie eerste jaar' : 'het afgelopen jaar'} in Ooit.` : 'Kijk terug op wat jullie samen deden.';
+  ['a','b'].forEach(k=>notify(`Vandaag ${milestoneLabel(m)}`, body, {slot:k, tag:'jaardag', dedupe:`jaardag:${togetherIso()}:${isoDate(m.at)}:${k}`, at:at.getTime()}));
+  lsSet(key, '1');
+}
+
+/* ---------- Fotoboek ---------- */
+// Een pdf per jaar met alle herinneringen: foto's, datum, plek en jullie
+// verhalen. Elke pagina wordt getekend zoals Wrapped, en jsPDF maakt er een
+// pdf van. Die bewaar je, deel je of laat je drukken.
+const BK = {W:1240, H:1754, M:110, paper:'#FBF8F2', ink:'#1E2230', muted:'#6B7080', gold:'#B9801C', line:'#E6DFD2'};
+let jsPdfP = null, book = null;
+function loadJsPdf(){
+  if(window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+  if(!jsPdfP) jsPdfP = new Promise((resolve, reject)=>{
+    const js = document.createElement('script'); js.src = 'vendor/jspdf-4.2.1.min.js';
+    js.onload = ()=>window.jspdf && window.jspdf.jsPDF ? resolve(window.jspdf.jsPDF) : reject(new Error('jspdf'));
+    js.onerror = ()=>{ jsPdfP = null; js.remove(); reject(new Error('jspdf')); };
+    document.head.appendChild(js);
+  });
+  return jsPdfP;
+}
+function bookYears(){ return [...new Set(memItems().map(x=>new Date(livedDate(x.e)).getFullYear()))].sort((a,b)=>b-a); }
+function bkPage(){
+  const c = document.createElement('canvas'); c.width = BK.W; c.height = BK.H;
+  const ctx = c.getContext('2d'); ctx.fillStyle = BK.paper; ctx.fillRect(0, 0, BK.W, BK.H);
+  return {c, ctx};
+}
+function bkFooter(ctx, y, n){
+  wrFont(ctx, 22, 'u', 600); ctx.fillStyle = BK.muted; ctx.textAlign = 'center';
+  ctx.fillText(`Ooit  ·  ${y}  ·  ${n}`, BK.W/2, BK.H - 60);
+}
+async function bkPhotos(ctx, list, x, y, w, h){
+  const urls = await wrPhotoUrls(list.map(p=>p.path));
+  const imgs = await Promise.all(urls.map(u=>u ? wrBitmap(u).catch(()=>null) : null));
+  const n = Math.min(imgs.length, 4), G = 20;
+  const cells = n===1 ? [[x, y, w, h]]
+    : n===2 ? [[x, y, (w-G)/2, h], [x+(w+G)/2, y, (w-G)/2, h]]
+    : n===3 ? [[x, y, w, (h-G)*.58], [x, y+(h-G)*.58+G, (w-G)/2, (h-G)*.42], [x+(w+G)/2, y+(h-G)*.58+G, (w-G)/2, (h-G)*.42]]
+    : [[x, y, (w-G)/2, (h-G)/2], [x+(w+G)/2, y, (w-G)/2, (h-G)/2], [x, y+(h+G)/2, (w-G)/2, (h-G)/2], [x+(w+G)/2, y+(h+G)/2, (w-G)/2, (h-G)/2]];
+  cells.forEach(([cx, cy, cw, ch], i)=>{
+    if(imgs[i]) wrCover(ctx, imgs[i], cx, cy, cw, ch, 18);
+    else { ctx.fillStyle = BK.line; wrRound(ctx, cx, cy, cw, ch, 18); ctx.fill(); }
+  });
+  if(list.length > 4){
+    const [cx, cy, cw, ch] = cells[3];
+    ctx.save(); wrRound(ctx, cx, cy, cw, ch, 18); ctx.clip(); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(cx, cy, cw, ch); ctx.restore();
+    wrText(ctx, `+${list.length - 4}`, cx + cw/2, cy + ch/2 + 24, {size:64, fam:'d', align:'center', color:'#fff'});
+  }
+}
+// Tekent alle pagina's van een jaar. Lange verhalen lopen door op een volgende pagina.
+async function buildBook(y, onPage, opt){
+  const items = memItems().filter(x=>new Date(livedDate(x.e)).getFullYear()===y).sort((a,b)=>livedDate(a.e)-livedDate(b.e));
+  const pages = [];
+  const push = async (pg, last)=>{
+    if(pages.length > 0 && !last) bkFooter(pg.ctx, y, pages.length + 1);
+    pages.push(pg.c); if(onPage) await onPage(pages.length, pg.c);
+  };
+  // Voorkant
+  {
+    const pg = bkPage(), ctx = pg.ctx;
+    const cover = items.map(x=>({x, n:livePhotos(x.e).filter(p=>photoPath(x.e, p)).length})).sort((a,b)=>b.n-a.n)[0];
+    if(cover && cover.n){ await bkPhotos(ctx, [{path:firstPhoto(cover.x.e)}], BK.M, 470, BK.W-2*BK.M, 860); }
+    else if(items[0]) await wrArt(ctx, items[0].item, BK.M, 470, BK.W-2*BK.M, 860, 18, opt);
+    wrFont(ctx, 30, 'u', 700); ctx.fillStyle = BK.gold; ctx.textAlign = 'center'; ctx.fillText('OOIT', BK.W/2, 200);
+    wrText(ctx, String(y), BK.W/2, 370, {size:190, fam:'d', align:'center', color:BK.ink});
+    wrText(ctx, `${nm('a')} en ${nm('b')}`, BK.W/2, 1450, {size:64, fam:'d', align:'center', color:BK.ink, maxW:BK.W-2*BK.M, maxLines:2});
+    wrText(ctx, items.length===1 ? '1 herinnering' : `${items.length} herinneringen`, BK.W/2, 1530, {size:34, align:'center', color:BK.muted});
+    await push(pg);
+  }
+  for(const x of items){
+    const e = x.e, it = x.item, m = e.memory || {};
+    const photos = livePhotos(e).filter(p=>photoPath(e, p)).map(p=>({path:photoPath(e, p)}));
+    let pg = bkPage(), ctx = pg.ctx, cy = BK.M + 40;
+    const head = cont=>{
+      wrFont(ctx, 26, 'u', 700); ctx.fillStyle = BK.gold; ctx.textAlign = 'left';
+      ctx.fillText(fmtDate(livedDate(e)).toUpperCase(), BK.M, cy);
+      cy = wrText(ctx, it.title + (cont ? ' (vervolg)' : ''), BK.M, cy + 86, {size:cont ? 48 : 70, fam:'d', color:BK.ink, maxW:BK.W-2*BK.M, maxLines:2, lh:1.08}) + 30;
+    };
+    head(false);
+    const where = cleanWhere(it);
+    if(where){ cy = wrText(ctx, where, BK.M, cy + 20, {size:32, color:BK.muted, maxW:BK.W-2*BK.M, maxLines:1}) + 20; }
+    cy += 30;
+    if(photos.length){
+      const ph = photos.length===1 ? 820 : 760;
+      await bkPhotos(ctx, photos, BK.M, cy, BK.W-2*BK.M, ph);
+      cy += ph + 60;
+    } else {
+      await wrArt(ctx, it, BK.M, cy, 360, 450, 18, opt);
+      cy += 450 + 60;
+    }
+    // Jullie verhalen, met wie het schreef
+    const voices = ['a','b'].filter(k=>m[k] && (m[k].moment || m[k].word || m[k].again));
+    const textW = BK.W - 2*BK.M - 80, size = 30, lh = size*1.5;
+    for(const k of voices){
+      const v = m[k];
+      const lines = [];
+      wrFont(ctx, size, 'u', 400);
+      const body = [v.word, v.moment].filter(Boolean).join('\n\n');
+      const all = body ? wrLines(ctx, body, textW, 100000) : [];
+      if(v.again) all.push('', `Nog een keer? ${againLabel(v.again)}`);
+      lines.push(...all);
+      if(cy + 120 > BK.H - 140){ await push(pg); pg = bkPage(); ctx = pg.ctx; cy = BK.M + 40; head(true); cy += 20; }
+      wrAvatar(ctx, k, BK.M + 26, cy + 4, 26);
+      wrFont(ctx, 28, 'u', 700); ctx.fillStyle = BK.ink; ctx.textAlign = 'left'; ctx.fillText(nm(k), BK.M + 80, cy + 14);
+      cy += 64;
+      let fresh = false;
+      for(const line of lines){
+        if(cy > BK.H - 150){ await push(pg); pg = bkPage(); ctx = pg.ctx; cy = BK.M + 40; head(true); cy += 30; fresh = true; }
+        if(fresh && !line) continue;
+        fresh = false;
+        wrFont(ctx, size, 'u', 400); ctx.fillStyle = BK.ink; ctx.textAlign = 'left';
+        ctx.fillText(line, BK.M + 80, cy);
+        cy += lh;
+      }
+      cy += 40;
+    }
+    await push(pg);
+  }
+  // Achterkant
+  {
+    const pg = bkPage(), ctx = pg.ctx;
+    wrText(ctx, 'Wordt vervolgd', BK.W/2, BK.H/2, {size:80, fam:'d', align:'center', color:BK.ink});
+    wrText(ctx, `Ooit, ${y}`, BK.W/2, BK.H/2 + 80, {size:32, align:'center', color:BK.muted});
+    await push(pg, true);
+  }
+  return pages;
+}
+async function openBook(y){
+  if(needMe()) return;
+  if(!memItems().some(x=>new Date(livedDate(x.e)).getFullYear()===y)){ toast(`In ${y} zijn nog geen herinneringen`); return; }
+  book = {year:y, blob:null, url:''};
+  bookEl.innerHTML = `<button class="icon-btn close" data-action="closebook" aria-label="Sluiten">${I.close}</button>
+    <div class="bk-head"><small>Fotoboek</small><h2>${y}</h2><p id="bkStatus">Even geduld, de pagina's worden gemaakt</p></div>
+    <div class="bk-thumbs" id="bkThumbs"></div>
+    <div class="bk-cta"><button class="btn gold" data-action="booksave" disabled>${I.share}Bewaar of deel de pdf</button></div>`;
+  openLayer(bookEl);
+  const cur = book;
+  const run = async opt=>{
+    const [jsPDF] = await Promise.all([loadJsPdf(), wrFonts()]);
+    if(book !== cur) return null;
+    const doc = new jsPDF({unit:'mm', format:'a4', compress:true});
+    const thumbs = $('#bkThumbs'); if(thumbs) thumbs.innerHTML = '';
+    await buildBook(y, async (n, c)=>{
+      if(book !== cur) throw new Error('gestopt');
+      const data = c.toDataURL('image/jpeg', .82);
+      if(n > 1) doc.addPage('a4', 'portrait');
+      doc.addImage(data, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+      const t = document.createElement('canvas'); t.width = 248; t.height = 351;
+      t.getContext('2d').drawImage(c, 0, 0, 248, 351);
+      const im = document.createElement('img'); im.src = t.toDataURL('image/jpeg', .8); im.alt = `Pagina ${n}`;
+      if(thumbs) thumbs.appendChild(im);
+      const st = $('#bkStatus'); if(st) st.textContent = `Pagina ${n} gemaakt`;
+    }, opt);
+    return doc;
+  };
+  try{
+    let doc;
+    // Blokkeert de browser het canvas door een illustratie, dan opnieuw zonder.
+    try{ doc = await run({art:true}); }
+    catch(err){ if(err && err.name === 'SecurityError') doc = await run({art:false}); else throw err; }
+    if(!doc || book !== cur) return;
+    cur.blob = doc.output('blob');
+    cur.url = URL.createObjectURL(cur.blob);
+    const pages = doc.getNumberOfPages();
+    const st = $('#bkStatus'); if(st) st.textContent = `${pages} pagina's op A4. Bewaar de pdf, stuur hem door of laat hem drukken.`;
+    const b = bookEl.querySelector('[data-action="booksave"]'); if(b) b.disabled = false;
+  }catch(err){
+    if(book !== cur) return;
+    console.error(err);
+    const st = $('#bkStatus'); if(st) st.textContent = 'Het fotoboek maken lukte niet. Controleer je internet en probeer het opnieuw.';
+  }
+}
+function saveBook(){
+  if(!book || !book.blob) return;
+  const name = `ooit-fotoboek-${book.year}.pdf`;
+  const file = new File([book.blob], name, {type:'application/pdf'});
+  if(navigator.canShare && navigator.share && navigator.canShare({files:[file]})){
+    navigator.share({files:[file], title:`Ooit ${book.year}`}).catch(err=>{ if(err && err.name !== 'AbortError') toast('Delen lukte niet. Probeer het opnieuw.'); });
+    return;
+  }
+  const a = document.createElement('a'); a.href = book.url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('Fotoboek gedownload');
+}
+function closeBook(){
+  if(book && book.url) setTimeout(((u)=>()=>URL.revokeObjectURL(u))(book.url), 1000);
+  book = null;
+  closeLayer(bookEl);
+}
+
 /* ---------- Tabs ---------- */
 function setTab(t){
   // Oude namen blijven werken: Ontdekken en Onze lijst zitten nu onder Ooit.
@@ -3246,6 +3504,7 @@ app.addEventListener('click', ev=>{
   if((el = hit('[data-place]'))){ pickPlaceFor(el.dataset.place); return; }
   if((el = hit('[data-placefor]'))){ const id = el.dataset.placefor; closeLayer(pickerEl); setTimeout(()=>pickPlaceFor(id), 200); return; }
   if((el = hit('[data-mapitem]'))){ const id = el.dataset.mapitem; closeLayer(pickerEl); showMapCard(id); return; }
+  if((el = hit('[data-book]'))){ openBook(Number(el.dataset.book)); return; }
   if((el = hit('[data-wrapped]'))){ openWrapped(Number(el.dataset.wrapped)); return; }
   if((el = hit('[data-matchopen]'))){ closeLayer(matchEl); openSheet(el.dataset.matchopen); return; }
   if((el = hit('[data-own]'))){ addOwn(el.dataset.own); return; }
@@ -3260,7 +3519,10 @@ app.addEventListener('click', ev=>{
   if((el = hit('[data-tab]'))){ if(sheet.classList.contains('show')) closeLayer(sheet); setTab(el.dataset.tab); return; }
   if((el = hit('[data-action]'))){
     const a = el.dataset.action;
-    if(a==='newmemory'){ if(sheet.classList.contains('show')) closeLayer(sheet); openNewMemory(); }
+    if(a==='closebook') closeBook();
+    else if(a==='booksave') saveBook();
+    else if(a==='savetogether'){ const v = ($('#gTogether')||{}).value || ''; saveTogether(v); if(fromIso(v)!==null) closeLayer(gateEl); }
+    else if(a==='newmemory'){ if(sheet.classList.contains('show')) closeLayer(sheet); openNewMemory(); }
     else if(a==='closenewmemory') closeNewMemory();
     else if(a==='savenewmemory') saveNewMemory();
     else if(a==='nmplace'){ if(newMem){ const t = (($('#nm_title')||{}).value||'').trim(); openPlacePicker({heading:'Waar was het?', title:t || 'Nieuwe herinnering', current:newMem.ll, allowClear:!!newMem.ll, onDone: ll=>{ if(newMem){ newMem.ll = ll; renderNmPlace(); } }}); } }
@@ -3336,6 +3598,7 @@ document.addEventListener('keydown', ev=>{
   if(swipeEl.classList.contains('show') && !matchEl.classList.contains('show') && (ev.key==='ArrowRight' || ev.key==='ArrowLeft')){ commitSwipe(ev.key==='ArrowRight' ? 'right' : 'left'); return; }
   if(ev.key==='Escape'){
     if(placeEl.classList.contains('show')) placeFinish(null, true);
+    else if(bookEl.classList.contains('show')) closeBook();
     else if(wrEl.classList.contains('show')) closeWrapped();
     else if(lightbox.classList.contains('show')) closeLayer(lightbox);
     else if(matchEl.classList.contains('show')) closeLayer(matchEl);

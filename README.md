@@ -15,7 +15,7 @@ Een web-app voor jullie twee. Eén gedeelde lijst met ervaringen, live bijgewerk
 | Supabase wakker houden (`.github/workflows/keepalive.yml`) | Elke dag om 05:17 UTC |
 | Meldingen op je telefoon (`supabase/push.sql`, `.github/workflows/notify.yml`) | Klaar om aan te zetten, zie stap 8 |
 | Eigen kaarten en swipen (`supabase/swipe-en-kaarten.sql`) | Klaar om te plakken, zie stap 9 |
-| Herinneringen, Gepland, Kaart en Ooit Wrapped | Werken zonder extra stappen |
+| Herinneringen, Gepland, Kaart, Ooit Wrapped, jaardag en fotoboek | Werken zonder extra stappen |
 
 Je hoeft `config.js` en `sw.js` dus niet meer met de hand aan te passen.
 
@@ -187,6 +187,12 @@ De app draait om drie fases. Elke ervaring staat in een ervan.
 | Ooit | Onze lijst en Ideeën opdoen. Bij een ervaring tik je op "Plan dit" om een datum te kiezen. Swipen, dobbelen en eigen kaarten zitten hier. |
 
 Ooit Wrapped verschijnt vanaf 1 december bovenaan Herinneringen. Oudere jaren staan onderaan die pagina. Wil je het nu al zien, open dan de app met `?wrapped=2026` achter de link, bijvoorbeeld `https://thanegraaf.github.io/Ooit-app/?wrapped=2026`. Dat werkt in een browser waarin je bent ingelogd.
+
+Bovenaan Herinneringen staat hoeveel dagen jullie samen zijn en hoe lang het nog duurt tot de volgende mijlpaal. Een mijlpaal is jullie jaardag of elke 100 dagen. Op die dag krijgen jullie allebei om 9:00 een melding en toont de kaart jullie foto's uit die periode. De startdatum is 15 september 2026. Je past hem aan in het profielscherm onder **Samen sinds**. De app bewaart hem als instelling in de tabel `entries`, dus ook hiervoor hoef je niets in Supabase te doen.
+
+Bij elk jaar op Herinneringen staat de knop **Fotoboek**. Die maakt een pdf op A4 met een voorkant, een pagina per herinnering met foto's en jullie verhalen, en een achterkant. Lange verhalen lopen door op een volgende pagina. Je bewaart de pdf, stuurt hem door of laat hem drukken. Het maken gebeurt op je telefoon met jsPDF (`vendor/jspdf-4.2.1.min.js`, MIT-licentie).
+
+Het app-icoon bestaat uit twee overlappende cirkels. Op iOS blijft het oude icoon staan tot je de app van je beginscherm haalt en via Safari opnieuw toevoegt. Daarna log je opnieuw in.
 
 Voor deze opzet hoef je niets in Supabase te veranderen. Alles wat al beleefd was, staat automatisch bij Herinneringen.
 
