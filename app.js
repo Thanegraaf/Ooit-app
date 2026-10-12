@@ -1373,11 +1373,13 @@ function openLightbox(pid, itemId){
   if(!lbPhotos.length) return;
   lbIndex = Math.max(0, lbPhotos.indexOf(pid));
   const many = lbPhotos.length > 1;
-  lightbox.innerHTML = `<button class="icon-btn close" data-action="closelightbox" aria-label="Sluiten">${I.close}</button>
-    <div class="lb-track" id="lbTrack">${lbPhotos.map((p, i)=>`<div class="lb-slide" aria-label="Foto ${i+1} van ${lbPhotos.length}">${imgTag(photoPath(e, p), 'Foto bij deze ervaring').replace(' loading="lazy"', '')}</div>`).join('')}</div>
+  // De sluitknop staat bewust als laatste. Safari tekent het veegvlak in een
+  // eigen laag die anders over de knop heen kan vallen.
+  lightbox.innerHTML = `<div class="lb-track" id="lbTrack">${lbPhotos.map((p, i)=>`<div class="lb-slide" aria-label="Foto ${i+1} van ${lbPhotos.length}">${imgTag(photoPath(e, p), 'Foto bij deze ervaring').replace(' loading="lazy"', '')}</div>`).join('')}</div>
     ${many ? `<button class="lb-nav prev" data-action="lbprev" aria-label="Vorige foto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><button class="lb-nav next" data-action="lbnext" aria-label="Volgende foto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>` : ''}
     ${many ? `<div class="lb-dots" id="lbDots">${lbPhotos.map(()=>'<i></i>').join('')}</div>` : ''}
-    <div class="lb-bar"><span id="lbInfo"></span>${S.mode==='ready'?`<button class="btn danger small" data-action="deletephoto">Verwijder foto</button>`:''}</div>`;
+    <div class="lb-bar"><span id="lbInfo"></span>${S.mode==='ready'?`<button class="btn danger small" data-action="deletephoto">Verwijder foto</button>`:''}</div>
+    <button class="icon-btn close" data-action="closelightbox" aria-label="Sluiten">${I.close}</button>`;
   openLayer(lightbox);
   hydrate();
   const track = $('#lbTrack');
