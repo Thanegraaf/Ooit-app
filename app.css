@@ -392,6 +392,12 @@ svg{display:block}
 .match h3{font-family:var(--display);font-weight:400;font-size:26px;margin:4px 0 28px;line-height:1.15;max-width:18ch}
 .match .btns{display:flex;gap:10px}
 .match .btn.soft{background:rgba(255,255,255,.12);color:#fff}
+.yearpop small{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.yearpop p{margin:6px 0 0}
+.yp-photos{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:100%;max-width:300px;margin:20px 0 4px}
+.yp-photos span{width:calc((100% - 12px) / 3);aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.1)}
+.yp-photos img{width:100%;height:100%;object-fit:cover;display:block}
+.yearpop .btns{margin-top:26px}
 .toast{top:calc(env(safe-area-inset-top) + 10px);bottom:auto;transform:translateY(-24px);z-index:90;box-shadow:0 10px 30px rgba(0,0,0,.18)}
 @media (min-width:600px){.toast{top:14px;bottom:auto}}
 #waitShelf .section{padding-top:4px;padding-bottom:18px}
@@ -736,20 +742,6 @@ div.pin-wrap{display:grid;place-items:center;width:34px;height:34px;cursor:grab}
 .mw.story > span:last-child{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-family:var(--ui);font-size:15px;line-height:1.4;color:var(--ink-2)}
 
 /* Jullie jaardag */
-.together{display:flex;align-items:center;gap:14px;width:calc(100% - 40px);margin:18px 20px 0;padding:14px 16px;border-radius:20px;background:linear-gradient(135deg,rgba(63,99,181,.10),rgba(196,87,126,.12));border:.5px solid var(--line)}
-.tg-count{flex:none;min-width:74px;height:74px;padding:0 8px;border-radius:18px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.05)}
-.tg-count b{font-family:var(--display);font-weight:400;font-size:30px;line-height:1}
-.tg-count span{font-size:11px;font-weight:700;color:var(--ink-2);margin-top:3px}
-.tg-text small{display:block;font-size:12px;font-weight:600;color:var(--ink-3)}
-.tg-text strong{display:block;font-family:var(--display);font-weight:400;font-size:20px;line-height:1.15;margin-top:3px}
-.together.big{display:block;padding:18px;background:radial-gradient(130% 140% at 0% 0%,#5A3C6E 0%,#1C1626 75%);color:#F4F1EA;border:0;box-shadow:0 10px 26px rgba(20,19,30,.22)}
-.together.big small{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
-.together.big strong{display:block;font-family:var(--display);font-weight:400;font-size:32px;line-height:1.05;margin:4px 0 6px}
-.together.big > span{display:block;font-size:14px;line-height:1.45;color:rgba(244,241,234,.75)}
-.tg-photos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
-.tg-photos span{aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.1)}
-.tg-photos img{width:100%;height:100%;object-fit:cover;display:block}
-.together-form{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
 
 /* Fotoboek */
 .yh-right{display:flex;align-items:center;gap:10px}

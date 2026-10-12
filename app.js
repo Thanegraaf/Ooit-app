@@ -618,6 +618,7 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState==='visible' && sb && S.me){
     scheduleRefetch(0); scheduleCards(0);
     loadMembers().then(refreshAll).catch(()=>{});
+    setTimeout(maybeYearPop, 1200);
   }
 });
 window.addEventListener('online', ()=>{ if(S.me) scheduleRefetch(0); });
@@ -678,7 +679,7 @@ const sheet = $('#sheet'), dice = $('#dice'), backdrop = $('#backdrop');
 const pickerEl = $('#picker'), gateEl = $('#who'), matchEl = $('#match');
 const memoryEl = $('#memory'), editorEl = $('#editor'), lightbox = $('#lightbox');
 const mapScreen = $('#map'), swipeEl = $('#swipe'), placeEl = $('#place'), wrEl = $('#wrapped');
-const bookEl = $('#book');
+const bookEl = $('#book'), yearPopEl = $('#yearpop');
 const memScreen = $('#memories'), planScreen = $('#planned'), memContent = $('#memContent'), planContent = $('#planContent');
 let ooitView = lsGet('ooit-view')==='ideas' ? 'ideas' : 'list';
 let cat = 'all', query = '', listView = 'todo', listFor = 'all', listEdit = false, lastFocus = null;
@@ -1537,10 +1538,6 @@ function openGate(mode, force){
         <p class="who-err" id="gErr" hidden></p>
         <button class="btn soft block" type="submit" data-action="saveprofile">Naam opslaan</button>
       </form>
-      <form class="together-form" onsubmit="return false">
-        <label>Samen sinds<input id="gTogether" type="date" value="${esc(togetherIso())}" max="${todayIso()}"></label>
-        <button class="btn soft block" type="submit" data-action="savetogether">Datum opslaan</button>
-      </form>
       <div class="push-row" id="pushRow"></div>
       <button class="btn soft block" style="margin-top:10px" data-action="logout">Uitloggen</button>`;
   }
@@ -2333,6 +2330,7 @@ function afterFirstLoad(){
   scheduleWrappedPush();
   scheduleOtdPush();
   scheduleTogetherPush();
+  setTimeout(maybeYearPop, 900);
   // Testlink: ?wrapped=2026 opent het overzicht, ook buiten december.
   let y = null;
   try{ y = Number(new URLSearchParams(location.search).get('wrapped')); }catch(err){}
@@ -2958,7 +2956,6 @@ function renderMemories(){
   let h = `<div class="largetitle home-head"><h1>Ooit</h1><p>Wat we deden, wat we plannen en wat we ooit nog willen.</p></div>`;
   if(!S.listReady){ memContent.innerHTML = h + `<div class="loading">Jullie herinneringen worden geladen</div>`; return; }
   h += statusBanner();
-  h += togetherCard();
   h += wrappedBanner();
   const otd = onThisDay();
   otd.slice(0, 3).forEach(x=>{
@@ -3184,68 +3181,71 @@ function scheduleOtdPush(){
 }
 
 /* ---------- Jullie jaardag ---------- */
-// De datum staat gedeeld in de tabel entries, onder een eigen sleutel. Die
-// heeft geen kaart, dus de lijst, de kaart en de tijdlijn slaan hem over.
+// Elk jaar op jullie jaardag verschijnt een pop-up, en jullie krijgen allebei
+// een melding. Een eerder bewaarde datum in de tabel entries gaat voor.
 const SETTINGS_ID = 'ooit-settings';
 const TOGETHER_DEFAULT = '2026-09-15';
 function togetherIso(){
   const s = S.entries[SETTINGS_ID] && S.entries[SETTINGS_ID].settings;
   return (s && fromIso(s.together) !== null) ? s.together : TOGETHER_DEFAULT;
 }
-function saveTogether(iso){
-  if(needMe()) return;
-  if(fromIso(iso) === null){ gateError('Kies een datum.'); return; }
-  if(S.entries[SETTINGS_ID]) patchEntry(SETTINGS_ID, {settings:{together:iso}, updatedBy:S.me});
-  else putEntry(SETTINGS_ID, {settings:{together:iso}, updatedBy:S.me});
-  toast('Jullie datum is bewaard');
-}
 const dayMs = 86400000;
 const startAt = () => fromIso(togetherIso());
 function annAt(n){ const d = new Date(startAt()); return new Date(d.getFullYear()+n, d.getMonth(), d.getDate(), 12).getTime(); }
-function daysTogether(){ return Math.round((fromIso(todayIso()) - startAt()) / dayMs); }
-// De eerstvolgende mijlpaal, vandaag meegerekend: een jaardag of een rond
-// aantal van 100 dagen. Vallen ze op dezelfde dag, dan wint de jaardag.
-function nextMilestone(){
+// De eerstvolgende jaardag, vandaag meegerekend.
+function nextAnniversary(){
   const today = fromIso(todayIso());
-  let n = new Date(today).getFullYear() - new Date(startAt()).getFullYear();
-  if(n < 1) n = 1;
+  let n = Math.max(1, new Date(today).getFullYear() - new Date(startAt()).getFullYear());
   if(annAt(n) < today) n++;
-  const days = daysTogether();
-  const h = Math.max(100, Math.ceil(days / 100) * 100);
-  const hAt = startAt() + h * dayMs;
-  return annAt(n) <= hAt ? {kind:'year', n, at:annAt(n)} : {kind:'days', n:h, at:hAt};
+  return {n, at:annAt(n)};
 }
 const yearsLabel = n => n===1 ? '1 jaar' : n+' jaar';
-const milestoneLabel = m => m.kind==='year' ? `${yearsLabel(m.n)} samen` : `${m.n} dagen samen`;
-function togetherCard(){
-  const days = daysTogether();
-  if(days < 0) return '';
-  const m = nextMilestone();
+// De jaardag van de afgelopen week, als die er is. Wie de app pas een paar
+// dagen later opent, ziet de pop-up dan alsnog.
+function recentAnniversary(){
   const today = fromIso(todayIso());
-  const since = fmtDate(fromIso(togetherIso()));
-  if(m.at === today && days > 0){
-    // De dag zelf: wat jullie sinds de vorige jaardag of mijlpaal deden.
-    const from = m.kind==='year' ? annAt(m.n-1) : startAt() + (m.n-100)*dayMs;
-    const mems = memItems().filter(x=>{ const t = livedDate(x.e); return t >= from && t < today + dayMs; });
-    const photos = mems.map(x=>firstPhoto(x.e)).filter(Boolean).slice(0, 4);
-    return `<div class="together big"><small>Vandaag</small><strong>${esc(milestoneLabel(m))}</strong>
-      <span>Sinds ${esc(since)}. ${mems.length ? `${mems.length === 1 ? '1 herinnering' : mems.length+' herinneringen'} in ${m.kind==='year' ? (m.n===1 ? 'jullie eerste jaar' : 'het afgelopen jaar') : 'die tijd'}.` : 'Tijd om er een herinnering bij te maken.'}</span>
-      ${photos.length ? `<div class="tg-photos">${photos.map(p=>`<span>${imgTag(p, '')}</span>`).join('')}</div>` : ''}</div>`;
+  for(let n = Math.max(1, new Date(today).getFullYear() - new Date(startAt()).getFullYear()); n >= 1; n--){
+    const at = annAt(n);
+    if(at <= today && today - at < 7*dayMs) return {n, at};
+    if(at < today) break;
   }
-  const left = Math.round((m.at - today) / dayMs);
-  return `<div class="together"><div class="tg-count"><b>${days}</b><span>${days===1 ? 'dag' : 'dagen'} samen</span></div>
-    <div class="tg-text"><small>Samen sinds ${esc(since)}</small><strong>Nog ${left === 1 ? '1 dag' : left+' dagen'} tot ${esc(milestoneLabel(m))}</strong></div></div>`;
+  return null;
 }
-// Zet een melding klaar voor de eerstvolgende mijlpaal, als die binnen 45 dagen valt.
+function maybeYearPop(){
+  if(!S.me || !yearPopEl.hidden) return;
+  const m = recentAnniversary(); if(!m) return;
+  const key = `ooit-jaarpop-${togetherIso()}-${m.n}`;
+  if(lsGet(key)) return;
+  if([...SHEETS, wrEl, bookEl, matchEl, swipeEl].some(el=>el && el.classList.contains('show'))) return;
+  lsSet(key, '1');
+  showYearPop(m);
+}
+function showYearPop(m){
+  const today = fromIso(todayIso());
+  const mems = memItems().filter(x=>{ const t = livedDate(x.e); return t >= annAt(m.n-1) && t < m.at + dayMs; });
+  const photos = mems.map(x=>firstPhoto(x.e)).filter(Boolean).slice(0, 6);
+  const span = m.n===1 ? 'jullie eerste jaar' : 'het afgelopen jaar';
+  const when = m.at === today ? 'Vandaag' : 'Op ' + fmtDate(m.at);
+  yearPopEl.innerHTML = `<div class="match-art"><span class="mc a">${esc(initial('a'))}</span><span class="mc b">${esc(initial('b'))}</span></div>
+    <small>${esc(when)}</small><h2>${esc(yearsLabel(m.n))} samen</h2>
+    <p>${esc(nm('a'))} en ${esc(nm('b'))}, sinds ${esc(fmtDate(startAt()))}</p>
+    ${mems.length ? `<p>${mems.length===1 ? '1 herinnering' : mems.length+' herinneringen'} in ${span}</p>` : ''}
+    ${photos.length ? `<div class="yp-photos">${photos.map(p=>`<span>${imgTag(p, '')}</span>`).join('')}</div>` : ''}
+    <div class="btns"><button class="btn gold small" data-action="closeyearpop">Proost</button></div>`;
+  openLayer(yearPopEl);
+  hydrate();
+  setTimeout(()=>{ const r = yearPopEl.querySelector('.match-art'); if(r) burst(relRect(r)); }, 700);
+  setTimeout(()=>{ const b = yearPopEl.querySelector('[data-action="closeyearpop"]'); b && b.focus({preventScroll:true}); }, 80);
+}
+// Zet een melding klaar voor de volgende jaardag, als die binnen 45 dagen valt.
 function scheduleTogetherPush(){
-  if(daysTogether() < 0) return;
-  const m = nextMilestone();
+  const m = nextAnniversary();
   const at = new Date(m.at); at.setHours(9, 0, 0, 0);
   if(at.getTime() <= Date.now() || at.getTime() - Date.now() > 45*dayMs) return;
   const key = `ooit-jaardag-${togetherIso()}-${isoDate(m.at)}`;
   if(lsGet(key)) return;
-  const body = m.kind==='year' ? `Kijk terug op ${m.n===1 ? 'jullie eerste jaar' : 'het afgelopen jaar'} in Ooit.` : 'Kijk terug op wat jullie samen deden.';
-  ['a','b'].forEach(k=>notify(`Vandaag ${milestoneLabel(m)}`, body, {slot:k, tag:'jaardag', dedupe:`jaardag:${togetherIso()}:${isoDate(m.at)}:${k}`, at:at.getTime()}));
+  const body = `Open Ooit en kijk terug op ${m.n===1 ? 'jullie eerste jaar' : 'het afgelopen jaar'}.`;
+  ['a','b'].forEach(k=>notify(`Vandaag ${yearsLabel(m.n)} samen`, body, {slot:k, tag:'jaardag', dedupe:`jaardag:${togetherIso()}:${isoDate(m.at)}:${k}`, at:at.getTime()}));
   lsSet(key, '1');
 }
 
@@ -3521,7 +3521,6 @@ app.addEventListener('click', ev=>{
     const a = el.dataset.action;
     if(a==='closebook') closeBook();
     else if(a==='booksave') saveBook();
-    else if(a==='savetogether'){ const v = ($('#gTogether')||{}).value || ''; saveTogether(v); if(fromIso(v)!==null) closeLayer(gateEl); }
     else if(a==='newmemory'){ if(sheet.classList.contains('show')) closeLayer(sheet); openNewMemory(); }
     else if(a==='closenewmemory') closeNewMemory();
     else if(a==='savenewmemory') saveNewMemory();
@@ -3562,6 +3561,7 @@ app.addEventListener('click', ev=>{
     else if(a==='retry'){ S.mode = session ? 'loading' : S.mode; S.listReady = false; refreshAll(); afterLogin(); }
     else if(a==='saveprofile'){ const n = ($('#gName').value||'').trim(); if(!n) return gateError('Vul je naam in.'); saveMyName(n); closeLayer(gateEl); toast('Naam opgeslagen'); renderBrowse(); }
     else if(a==='closematch') closeLayer(matchEl);
+    else if(a==='closeyearpop') closeLayer(yearPopEl);
     else if(a==='who'){ if(S.me && S.mode==='ready') openGate('profile', false); else needMe(); }
     else if(a==='closememory') closeLayer(memoryEl);
     else if(a==='savememory') saveMemory();
@@ -3602,6 +3602,7 @@ document.addEventListener('keydown', ev=>{
     else if(wrEl.classList.contains('show')) closeWrapped();
     else if(lightbox.classList.contains('show')) closeLayer(lightbox);
     else if(matchEl.classList.contains('show')) closeLayer(matchEl);
+    else if(yearPopEl.classList.contains('show')) closeLayer(yearPopEl);
     else if(editorEl.classList.contains('show')){ if(newMem) closeNewMemory(); else closeLayer(editorEl); }
     else if(memoryEl.classList.contains('show')) closeLayer(memoryEl);
     else if(gateEl.classList.contains('show')){ if(!gateForced) closeLayer(gateEl); }

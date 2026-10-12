@@ -188,7 +188,7 @@ De app draait om drie fases. Elke ervaring staat in een ervan.
 
 Ooit Wrapped verschijnt vanaf 1 december bovenaan Herinneringen. Oudere jaren staan onderaan die pagina. Wil je het nu al zien, open dan de app met `?wrapped=2026` achter de link, bijvoorbeeld `https://thanegraaf.github.io/Ooit-app/?wrapped=2026`. Dat werkt in een browser waarin je bent ingelogd.
 
-Bovenaan Herinneringen staat hoeveel dagen jullie samen zijn en hoe lang het nog duurt tot de volgende mijlpaal. Een mijlpaal is jullie jaardag of elke 100 dagen. Op die dag krijgen jullie allebei om 9:00 een melding en toont de kaart jullie foto's uit die periode. De startdatum is 15 september 2026. Je past hem aan in het profielscherm onder **Samen sinds**. De app bewaart hem als instelling in de tabel `entries`, dus ook hiervoor hoef je niets in Supabase te doen.
+Elk jaar op jullie jaardag, 15 september, verschijnt een pop-up met hoeveel jaar jullie samen zijn, hoeveel herinneringen jullie dat jaar maakten en een paar foto's. Open je de app pas later die week, dan zie je hem alsnog. Je ziet hem één keer per jaar per telefoon. Om 9:00 krijgen jullie allebei een melding. De datum staat in `app.js` als `TOGETHER_DEFAULT`, dus ook hiervoor hoef je niets in Supabase te doen.
 
 Bij elk jaar op Herinneringen staat de knop **Fotoboek**. Die maakt een pdf op A4 met een voorkant, een pagina per herinnering met foto's en jullie verhalen, en een achterkant. Lange verhalen lopen door op een volgende pagina. Je bewaart de pdf, stuurt hem door of laat hem drukken. Het maken gebeurt op je telefoon met jsPDF (`vendor/jspdf-4.2.1.min.js`, MIT-licentie).
 
