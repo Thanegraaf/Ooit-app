@@ -2325,13 +2325,18 @@ function afterFirstLoad(){
 /* Tekenen */
 function wrFont(ctx, size, fam, weight){ ctx.font = `${weight||400} ${size}px ${WF[fam||'u']}`; }
 function wrLines(ctx, text, maxW, maxLines){
-  const words = String(text||'').split(/\s+/).filter(Boolean); const lines = []; let cur = '';
-  for(const w of words){
-    const t = cur ? cur+' '+w : w;
-    if(ctx.measureText(t).width <= maxW || !cur) cur = t;
-    else { lines.push(cur); cur = w; }
-  }
-  if(cur) lines.push(cur);
+  // Een Enter in de tekst begint ook hier een nieuwe regel.
+  const lines = [];
+  String(text||'').replace(/\r/g, '').split('\n').forEach(par=>{
+    const words = par.split(/\s+/).filter(Boolean); let cur = '';
+    for(const w of words){
+      const t = cur ? cur+' '+w : w;
+      if(ctx.measureText(t).width <= maxW || !cur) cur = t;
+      else { lines.push(cur); cur = w; }
+    }
+    lines.push(cur);
+  });
+  while(lines.length && !lines[lines.length-1]) lines.pop();
   if(lines.length > maxLines){
     const keep = lines.slice(0, maxLines);
     let last = keep[maxLines-1];
