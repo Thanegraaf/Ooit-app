@@ -1363,15 +1363,47 @@ async function uploadPhotos(files, itemId){
     }
   }
 }
-let lbPhoto = null, lbItem = null, lbArmed = false;
+// Fotogalerij: alle foto's van een herinnering naast elkaar. Veeg naar links
+// of rechts, of gebruik de pijltjestoetsen.
+let lbPhoto = null, lbItem = null, lbArmed = false, lbPhotos = [], lbIndex = 0;
 function openLightbox(pid, itemId){
-  lbPhoto = pid; lbItem = itemId; lbArmed = false;
-  const e = S.entries[itemId]; const info = e && e.memory && e.memory.photos && e.memory.photos[pid];
+  const e = S.entries[itemId]; if(!e) return;
+  lbItem = itemId; lbArmed = false;
+  lbPhotos = livePhotos(e).filter(p=>photoPath(e, p));
+  if(!lbPhotos.length) return;
+  lbIndex = Math.max(0, lbPhotos.indexOf(pid));
+  const many = lbPhotos.length > 1;
   lightbox.innerHTML = `<button class="icon-btn close" data-action="closelightbox" aria-label="Sluiten">${I.close}</button>
-    <div class="lb-img">${info && info.path ? imgTag(info.path, 'Foto bij deze ervaring') : ''}</div>
-    <div class="lb-bar"><span>${info ? `Toegevoegd door ${esc(nm(info.by))}` : ''}</span>${S.mode==='ready'?`<button class="btn danger small" data-action="deletephoto">Verwijder foto</button>`:''}</div>`;
+    <div class="lb-track" id="lbTrack">${lbPhotos.map((p, i)=>`<div class="lb-slide" aria-label="Foto ${i+1} van ${lbPhotos.length}">${imgTag(photoPath(e, p), 'Foto bij deze ervaring').replace(' loading="lazy"', '')}</div>`).join('')}</div>
+    ${many ? `<button class="lb-nav prev" data-action="lbprev" aria-label="Vorige foto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><button class="lb-nav next" data-action="lbnext" aria-label="Volgende foto"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>` : ''}
+    ${many ? `<div class="lb-dots" id="lbDots">${lbPhotos.map(()=>'<i></i>').join('')}</div>` : ''}
+    <div class="lb-bar"><span id="lbInfo"></span>${S.mode==='ready'?`<button class="btn danger small" data-action="deletephoto">Verwijder foto</button>`:''}</div>`;
   openLayer(lightbox);
   hydrate();
+  const track = $('#lbTrack');
+  track.addEventListener('scroll', ()=>{
+    const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+    if(i !== lbIndex && i >= 0 && i < lbPhotos.length){ lbIndex = i; lbUpdate(); }
+  }, {passive:true});
+  requestAnimationFrame(()=>{ track.scrollTo({left: lbIndex*track.clientWidth, behavior:'instant'}); lbUpdate(); });
+}
+function lbUpdate(){
+  const e = S.entries[lbItem]; if(!e) return;
+  lbPhoto = lbPhotos[lbIndex];
+  const info = e.memory && e.memory.photos && e.memory.photos[lbPhoto];
+  const n = lbPhotos.length;
+  const inf = $('#lbInfo');
+  if(inf) inf.textContent = (n > 1 ? `${lbIndex+1} van ${n}` : '') + (n > 1 && info ? '. ' : '') + (info ? `Toegevoegd door ${nm(info.by)}` : '');
+  lightbox.querySelectorAll('#lbDots i').forEach((d, i)=>d.classList.toggle('on', i===lbIndex));
+  const prev = lightbox.querySelector('.lb-nav.prev'), next = lightbox.querySelector('.lb-nav.next');
+  if(prev) prev.disabled = lbIndex===0;
+  if(next) next.disabled = lbIndex===n-1;
+  if(lbArmed){ lbArmed = false; const b = lightbox.querySelector('[data-action="deletephoto"]'); if(b) b.textContent = 'Verwijder foto'; }
+}
+function lbGo(d){
+  const track = $('#lbTrack'); if(!track) return;
+  const i = Math.max(0, Math.min(lbPhotos.length-1, lbIndex + d));
+  track.scrollTo({left: i*track.clientWidth, behavior: reduced() ? 'instant' : 'smooth'});
 }
 async function deletePhoto(btn){
   if(!lbArmed){ lbArmed = true; btn.textContent = 'Zeker weten?'; return; }
@@ -2741,6 +2773,8 @@ app.addEventListener('click', ev=>{
     else if(a==='saveeditor') saveEditor();
     else if(a==='reseteditor') resetEditor();
     else if(a==='closelightbox') closeLayer(lightbox);
+    else if(a==='lbprev') lbGo(-1);
+    else if(a==='lbnext') lbGo(1);
     else if(a==='deletephoto') deletePhoto(el);
     else if(a==='editlist'){ listEdit = !listEdit; renderList(); }
     else if(a==='own') addOwn(($('#ownInput')||{}).value);
@@ -2763,6 +2797,7 @@ backdrop.addEventListener('click', ()=>{
   if(sheet.classList.contains('show')) closeLayer(sheet);
 });
 document.addEventListener('keydown', ev=>{
+  if(lightbox.classList.contains('show') && (ev.key==='ArrowRight' || ev.key==='ArrowLeft')){ lbGo(ev.key==='ArrowRight' ? 1 : -1); return; }
   if(wrEl.classList.contains('show') && (ev.key==='ArrowRight' || ev.key==='ArrowLeft')){ wrStep(ev.key==='ArrowRight' ? 1 : -1); return; }
   if(swipeEl.classList.contains('show') && !matchEl.classList.contains('show') && (ev.key==='ArrowRight' || ev.key==='ArrowLeft')){ commitSwipe(ev.key==='ArrowRight' ? 'right' : 'left'); return; }
   if(ev.key==='Escape'){
@@ -2793,7 +2828,7 @@ $('#q').addEventListener('input', ev=>{ clearTimeout(qTimer); qTimer=setTimeout(
   let startY=null, dy=0;
   el.addEventListener('touchstart', e=>{
     const sc = el.querySelector('.sheet-scroll');
-    if((sc && sc.scrollTop>0 && !e.target.closest('.grabber')) || e.target.closest('input,textarea,.again,.photo-grid')){ startY=null; return; }
+    if((sc && sc.scrollTop>0 && !e.target.closest('.grabber')) || e.target.closest('input,textarea,.again,.photo-grid,.mem-strip,.shelf')){ startY=null; return; }
     startY=e.touches[0].clientY; dy=0;
   }, {passive:true});
   el.addEventListener('touchmove', e=>{ if(startY===null) return; dy=e.touches[0].clientY-startY; if(dy>0){ el.style.transition='none'; el.style.transform=`translateY(${dy}px)`; } }, {passive:true});
