@@ -2047,8 +2047,20 @@ function drawMarkers(){
     }
     const tones = [...new Set(g.items.map(x=>toneOf(x.e)))];
     const tone = tones.length===1 ? tones[0] : 'mix';
+    // Gemengd bolletje: elke kleur krijgt een stuk naar hoeveel er van zijn.
+    let mixBg = '';
+    if(tone==='mix'){
+      const col = {gold:'#E3A33A', blue:'#3F7FD8', grey:'#9AA1AD'};
+      let at = 0;
+      const stops = ['gold','blue','grey'].map(t=>{
+        const k = g.items.filter(x=>toneOf(x.e)===t).length; if(!k) return '';
+        const from = at; at += k/n*100;
+        return `${col[t]} ${from.toFixed(1)}% ${at.toFixed(1)}%`;
+      }).filter(Boolean);
+      mixBg = ` style="background:conic-gradient(${stops.join(',')})"`;
+    }
     const lat = g.items.reduce((a,x)=>a+x.ll[0], 0)/n, lng = g.items.reduce((a,x)=>a+x.ll[1], 0)/n;
-    const el = pinButton(`<span class="pin cluster ${tone}">${n}</span>`, `${n} ervaringen`, ()=>{
+    const el = pinButton(`<span class="pin cluster ${tone}"${mixBg}>${n}</span>`, `${n} ervaringen`, ()=>{
       const b = llBounds(g.items.map(x=>x.ll));
       const same = Math.abs(b[1][0]-b[0][0]) < 0.0004 && Math.abs(b[1][1]-b[0][1]) < 0.0004;
       if(same || gmap.getZoom() >= 16) showMapList(g.items);
