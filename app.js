@@ -327,9 +327,10 @@ const EDIT_KEYS = ['title','where','season','time','blurb'];
 const CARDS = {};
 let cardsLoaded = false;
 function customItem(id, c, isCard){
-  return {id, cat: CAT[c.cat] ? c.cat : 'eigen', title: c.title || 'Eigen idee', where: c.where || 'Eigen idee',
+  const mem = c.kind === 'memory';
+  return {id, cat: CAT[c.cat] ? c.cat : 'eigen', title: c.title || (mem ? 'Herinnering' : 'Eigen idee'), where: c.where || (mem ? '' : 'Eigen idee'),
     time: c.time || '', days: 1, season: c.season || 'Wanneer jullie willen',
-    blurb: c.blurb || 'Dit idee hebben jullie zelf toegevoegd. Kies wanneer, waar en hoe.',
+    blurb: c.blurb || (mem ? '' : 'Dit idee hebben jullie zelf toegevoegd. Kies wanneer, waar en hoe.'),
     motif: c.motif || 'sun', pal: c.pal || 'dawn', effort: c.effort, ll: validLL(c.ll), card: !!isCard, by: c.by};
 }
 function baseItem(id){
@@ -519,6 +520,8 @@ function patchEntry(id, patch){
 }
 function removeEntry(id){
   if(isPendingGift(id)) unnotify('gift:'+id);
+  const pl = planOf(S.entries[id]);
+  if(pl) ['a','b'].forEach(k=>{ unnotify(`plan:${id}:${pl.start}:${k}`); unnotify(`planpost:${id}:${pl.start}:${k}`); });
   delete S.entries[id]; refreshAll();
   enqueue(id, ()=>sb.from('entries').delete().eq('id', id));
 }
@@ -570,6 +573,7 @@ function partnerChanges(prev, next){
     const item = getItem(id); if(!item) continue;
     if(!p && n.addedBy && n.addedBy!==S.me){
       if(n.via==='swipe') showMatch(id);
+      else if(n.custom && n.custom.kind==='memory') toast(`${nm(n.addedBy)} legde een herinnering vast: “${item.title}”`);
       else if(isHidden(id, n)) toast(`${nm(n.addedBy)} heeft een verrassing voor je`);
       else toast(`${nm(n.addedBy)} voegde \u201c${item.title}\u201d toe`);
     } else if(p && n.updatedBy && n.updatedBy!==S.me){
@@ -672,6 +676,8 @@ const sheet = $('#sheet'), dice = $('#dice'), backdrop = $('#backdrop');
 const pickerEl = $('#picker'), gateEl = $('#who'), matchEl = $('#match');
 const memoryEl = $('#memory'), editorEl = $('#editor'), lightbox = $('#lightbox');
 const mapScreen = $('#map'), swipeEl = $('#swipe'), placeEl = $('#place'), wrEl = $('#wrapped');
+const memScreen = $('#memories'), planScreen = $('#planned'), memContent = $('#memContent'), planContent = $('#planContent');
+let ooitView = lsGet('ooit-view')==='ideas' ? 'ideas' : 'list';
 let cat = 'all', query = '', listView = 'todo', listFor = 'all', listEdit = false, lastFocus = null;
 let gateForced = false, gateMode = 'login';
 
@@ -779,6 +785,8 @@ function statusText(e){
   const sp = surpriseOf(e);
   if(sp && !surpriseDue(sp) && sp.by===S.me) return `Verrassing voor ${nm(other(S.me))}, opent ${fmtDay(sp.openAt)}`;
   if(e.lived) return 'Beleefd op '+fmtDate(livedDate(e));
+  const pl = planOf(e);
+  if(pl) return (planPast(e) ? 'Was gepland op ' : 'Gepland op ') + planWhen(pl);
   if(e.for!=='both') return 'Voor '+nm(e.for);
   const w = e.wants||{};
   if(w.a && w.b) return 'Samen, match';
@@ -812,47 +820,36 @@ function rowHtml({id,e,item}, i){
       <span class="row-text"><span class="rt-title">${esc(item.title)}</span><span class="rt-sub">${rowAv(e)}<span class="txt">${esc(statusText(e))}</span></span></span>
     </button>${action}</li>`;
 }
+function ooitSeg(v){
+  return `<div class="segmented ooit-seg" role="tablist" data-v="${v}"><span class="thumb"></span><button role="tab" data-ooit="list" aria-selected="${v==='list'}">Onze lijst</button><button role="tab" data-ooit="ideas" aria-selected="${v==='ideas'}">Ideeën opdoen</button></div>`;
+}
 function renderList(){
   let h = '';
   if(!S.listReady){
-    listContent.innerHTML = `<div class="list-head"><h1>Onze lijst</h1></div><div class="loading">Jullie lijst wordt geladen</div>`;
+    listContent.innerHTML = `<div class="list-head"><h1>Ooit</h1></div>${ooitSeg('list')}<div class="loading">Jullie lijst wordt geladen</div>`;
     return;
   }
-  const all = listItems();
-  const lived = all.filter(x=>x.e.lived);
-  const pct = all.length ? Math.round(lived.length/all.length*100) : 0;
-  const banner = S.mode==='config' ? `<div class="banner">De koppeling met Supabase ontbreekt. Vul config.js in, zie de README.</div>`
-    : S.mode==='broken' ? `<div class="banner">Jullie lijst is nu niet bereikbaar. Controleer je internet. Is het Supabase-project gepauzeerd, herstel het dan in het Supabase-dashboard.</div><div style="padding:10px 20px 0"><button class="btn soft small" data-action="retry">Opnieuw proberen</button></div>` : '';
-  h += `<div class="list-head"><h1>Onze lijst</h1>`;
+  const all = listItems().filter(x=>phaseOf(x.e)==='ooit');
+  h += `<div class="list-head"><h1>Ooit</h1>`;
   if(!all.length){
     listEdit = false;
-    h += `</div>${banner}<div class="empty"><div class="empty-art">${art({id:'empty',motif:'circles',pal:'rose'})}</div><h3>Nog leeg</h3><p>Ontdek ervaringen en tik op de plus. Kies of het iets is voor jullie samen of voor één van jullie.</p><button class="btn primary" data-tab="browse">Ervaringen ontdekken</button></div>`;
+    h += `<p>Wat jullie ooit nog willen doen.</p></div>${ooitSeg('list')}${statusBanner()}<div class="empty"><div class="empty-art">${art({id:'empty',motif:'circles',pal:'rose'})}</div><h3>Nog leeg</h3><p>Zoek ideeën en tik op de plus, of swipe samen door de kaarten. Wat een datum krijgt, staat bij Gepland.</p><button class="btn primary" data-ooit="ideas">Ideeën opdoen</button></div>`;
     h += ownForm();
     listContent.innerHTML = h; return;
   }
   const both = all.filter(x=>x.e.for==='both' && (x.e.wants||{}).a && (x.e.wants||{}).b).length;
-  h += `<p>${all.length} ${all.length===1?'ervaring':'ervaringen'}, waarvan ${both} samen. ${lived.length} beleefd.</p><button class="editbtn" data-action="editlist" aria-pressed="${listEdit}">${listEdit?'Klaar':'Wijzig'}</button></div>`;
-  h += banner;
-  h += wrappedBanner();
-  h += `<div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Deel van jullie lijst dat beleefd is"><i style="width:${pct}%"></i></div>`;
+  h += `<p>${all.length} ${all.length===1?'ervaring':'ervaringen'} voor ooit, waarvan ${both} samen.</p><button class="editbtn" data-action="editlist" aria-pressed="${listEdit}">${listEdit?'Klaar':'Wijzig'}</button></div>`;
+  h += ooitSeg('list');
+  h += statusBanner();
   const fl = [['all','Alles'],['both','Samen'],['a',nm('a')],['b',nm('b')]];
   h += `<div class="filters" role="tablist" aria-label="Voor wie">${fl.map(([k,l])=>`<button class="chip" role="tab" data-listfor="${k}" aria-selected="${listFor===k}">${k==='all'?'':k==='both'?pairAv('sm'):av(k,'sm')}${esc(l)}</button>`).join('')}</div>`;
-  const filtered = all.filter(x=>listFor==='all' || x.e.for===listFor);
-  const todo = filtered.filter(x=>!x.e.lived), done = filtered.filter(x=>x.e.lived);
-  h += `<div class="segmented" role="tablist" data-v="${listView}"><span class="thumb"></span>
-    <button role="tab" data-listview="todo" aria-selected="${listView==='todo'}">Te doen (${todo.length})</button>
-    <button role="tab" data-listview="lived" aria-selected="${listView==='lived'}">Beleefd (${done.length})</button></div>`;
-  if(listView==='todo'){
-    const waitIds = new Set(waitingIds());
-    const wait = todo.filter(x=>waitIds.has(x.id));
-    const rest = todo.filter(x=>!waitIds.has(x.id));
-    if(wait.length) h += `<div class="group-head"><h2>Wacht op jouw goedkeuring</h2><span class="count">${wait.length}</span></div><ul class="rows">${wait.map(rowHtml).join('')}</ul>`;
-    if(rest.length) h += `${wait.length?'<div class="group-head"><h2>Op de lijst</h2></div>':''}<ul class="rows">${rest.map(rowHtml).join('')}</ul>`;
-    if(!todo.length) h += `<div class="empty"><h3>Alles beleefd</h3><p>Alles in deze selectie is gedaan. Tijd voor iets nieuws.</p><button class="btn soft" data-action="swipe">Swipen</button></div>`;
-  } else {
-    h += done.length ? `<ul class="rows">${done.map(rowHtml).join('')}</ul>` : `<div class="empty"><h3>Nog niets beleefd</h3><p>Tik op het rondje naast een ervaring zodra jullie het gedaan hebben.</p></div>`;
-    h += wrappedArchive();
-  }
+  const todo = all.filter(x=>listFor==='all' || x.e.for===listFor);
+  const waitIds = new Set(waitingIds());
+  const wait = todo.filter(x=>waitIds.has(x.id));
+  const rest = todo.filter(x=>!waitIds.has(x.id));
+  if(wait.length) h += `<div class="group-head"><h2>Wacht op jouw goedkeuring</h2><span class="count">${wait.length}</span></div><ul class="rows">${wait.map(rowHtml).join('')}</ul>`;
+  if(rest.length) h += `${wait.length?'<div class="group-head"><h2>Op de lijst</h2></div>':''}<ul class="rows">${rest.map(rowHtml).join('')}</ul>`;
+  if(!todo.length) h += `<div class="empty"><h3>Niets in deze selectie</h3><p>Kies een ander filter, of zoek nieuwe ideeën.</p><button class="btn soft" data-action="swipe">Swipen</button></div>`;
   h += ownForm();
   listContent.innerHTML = h;
   hydrate();
@@ -866,10 +863,11 @@ function renderCouple(){
   const html = S.me
     ? `<span class="avs">${av('a', S.me==='a'?'me':'')}${av('b', S.me==='b'?'me':'')}</span>${esc(nm(S.me))}`
     : `<span class="avs">${av('both')}</span>${session?'Meedoen':'Inloggen'}`;
-  $('#coupleBtn').innerHTML = html; $('#coupleBtn2').innerHTML = html;
+  document.querySelectorAll('.couple[data-action="who"]').forEach(b=>{ b.innerHTML = html; });
 }
 function updateBadge(pop){
-  const n = Object.keys(S.entries).filter(id=>getItem(id)).length;
+  // Het getal op Ooit telt wat op jouw goedkeuring wacht.
+  const n = waitingIds().length;
   const b = $('#badge'); const was = b.textContent;
   b.hidden = n===0; b.textContent = n;
   if(pop || (String(n)!==was && n>Number(was))){ b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
@@ -891,12 +889,15 @@ function refreshAll(){
     }
   }
   if(!mylist.hidden) renderList();
+  if(!memScreen.hidden){ if(document.activeElement && document.activeElement.id==='memQ') renderMemTimeline(); else renderMemories(); }
+  if(!planScreen.hidden) renderPlanned();
+  updatePlanBadge();
   if(memoryEl.classList.contains('show') && memId){ if(S.entries[memId]) renderMemPhotos(); else closeLayer(memoryEl); }
   if(sheet.classList.contains('show') && sheet.dataset.id){
     if(getItem(sheet.dataset.id)) renderSheetState(sheet.dataset.id, false); else closeLayer(sheet);
   }
   updateBadge(false);
-  const sw = $('#swipeBadge'); if(sw) sw.hidden = !waitingIds().length;
+  document.querySelectorAll('.swipe-dot').forEach(d=>{ d.hidden = !waitingIds().length; });
   if(!mapScreen.hidden) drawMarkers();
   if(swipeEl.classList.contains('show') && deck.length && !swipeDrag) renderSwipe();
   syncBrowse();
@@ -984,8 +985,13 @@ function setFor(id, who){
 function toggleLived(id, start){
   if(needMe()) return;
   const e = S.entries[id]; if(!e) return;
-  const lived = e.lived ? null : Date.now();
-  patchEntry(id, {lived, updatedBy:S.me});
+  const pl = planOf(e);
+  // Was het gepland, dan telt de geplande dag als de dag van de herinnering.
+  const lived = e.lived ? null : (pl ? Math.min(fromIso(pl.start), Date.now()) : Date.now());
+  const patch = {lived, updatedBy:S.me};
+  if(lived && pl) patch.memory = {date: isoDate(lived)};
+  patchEntry(id, patch);
+  if(lived && pl) ['a','b'].forEach(k=>unnotify(`planpost:${id}:${pl.start}:${k}`));
   if(lived){
     if(start) burst(start);
     vibrate([10,40,14]);
@@ -994,7 +1000,7 @@ function toggleLived(id, start){
     renderSheetState(id, true);
     setTimeout(()=>openMemory(id, true), 420);
   }
-  else toast('Terug naar de lijst');
+  else toast(pl ? 'Terug naar Gepland' : 'Terug naar Ooit');
 }
 function removeWithUndo(id){
   const prev = S.entries[id]; if(!prev) return;
@@ -1055,23 +1061,20 @@ function openSheet(id){
   const item = getItem(id); if(!item) return;
   const c = CAT[item.cat] || CAT.eigen;
   const r = rng(hash(id)+7);
-  const pick = DATA.filter(x=>x.cat===item.cat && x.id!==id && !S.entries[x.id]).sort(()=>r()-.5).slice(0,4);
+  const e0 = S.entries[id];
+  const pick = (e0 && e0.lived) ? [] : DATA.filter(x=>x.cat===item.cat && x.id!==id && !S.entries[x.id]).sort(()=>r()-.5).slice(0,4);
   sheet.dataset.id = id;
   sheet.innerHTML = `
     <div class="grabber"></div>
     <div class="sheet-top"><button class="icon-btn" data-action="close" aria-label="Sluiten">${I.close}</button></div>
     <div class="sheet-scroll">
-      <div class="sheet-art">${art(item,'animate')}<div id="stampSlot"></div></div>
+      ${sheetArtHtml(id, item, e0)}
       <div class="sheet-body">
         <div class="kicker"><span class="dot" style="background:${c.color}"></span>${c.name}${item.rare?' <span class="pill">Zeldzaam</span>':''}</div>
         <h2 id="sheetTitle">${esc(item.title)}</h2>
-        <p class="blurb">${esc(item.blurb)}</p>
-        <dl class="facts">
-          <div><dt>Waar</dt><dd>${esc(item.where)}</dd></div>
-          <div><dt>Beste tijd</dt><dd>${esc(item.season)}</dd></div>
-          <div><dt>Duur</dt><dd>${esc(item.time || 'Aan jullie')}</dd></div>
-          <div><dt>Moeite</dt><dd>${esc(EFFORTS[effortOf(item)])}</dd></div>
-        </dl>
+        <p class="blurb" ${item.blurb?'':'hidden'}>${esc(item.blurb)}</p>
+        <dl class="facts" id="sheetFacts">${factsHtml(item, e0)}</dl>
+        <div id="sheetPlan"></div>
         <div id="sheetPlace"></div>
         <div id="sheetOwner"></div>
         <div id="sheetMemory"></div>
@@ -1080,6 +1083,7 @@ function openSheet(id){
     </div>
     <div class="sheet-cta" id="sheetCta"></div>`;
   renderSheetState(id, false);
+  bindSheetPhotos();
   hydrate();
   if(sheet.classList.contains('show')) sheet.querySelector('.sheet-scroll').scrollTop = 0;
   else openLayer(sheet);
@@ -1109,16 +1113,46 @@ function openSurpriseSheet(id){
   hydrate();
   setTimeout(()=>{ const b=sheet.querySelector('[data-action="close"]'); b && b.focus({preventScroll:true}); }, 60);
 }
+function sheetPhotoKey(e){ return (e && e.lived) ? livePhotos(e).filter(p=>photoPath(e, p)).join(',') : ''; }
+function sheetArtHtml(id, it, e){
+  const key = sheetPhotoKey(e);
+  if(!key) return `<div class="sheet-art" data-photos="">${art(it, 'animate')}<div id="stampSlot"></div></div>`;
+  const photos = key.split(',');
+  return `<div class="sheet-art photos" data-photos="${esc(key)}"><div class="sp-track">${photos.map(p=>`<div class="sp-slide">${imgTag(photoPath(e, p), 'Foto bij deze herinnering')}<button data-photo="${esc(p)}" data-photoitem="${esc(id)}" aria-label="Foto groot bekijken"></button></div>`).join('')}</div>${photos.length > 1 ? `<div class="sp-dots">${photos.map((_, i)=>`<i class="${i ? '' : 'on'}"></i>`).join('')}</div>` : ''}<div id="stampSlot"></div></div>`;
+}
+function bindSheetPhotos(){
+  const tr = sheet.querySelector('.sp-track'); if(!tr) return;
+  tr.addEventListener('scroll', ()=>{
+    const i = Math.round(tr.scrollLeft / Math.max(1, tr.clientWidth));
+    sheet.querySelectorAll('.sp-dots i').forEach((d, j)=>d.classList.toggle('on', j===i));
+  }, {passive:true});
+  hydrate();
+}
+function planBox(id, e){
+  const p = planOf(e);
+  if(!p) return '';
+  const s = new Date(fromIso(p.start));
+  return `<div class="plan-box"><div class="pb-top"><div class="pc-date"><b>${s.getDate()}</b><span>${MONTHS_SHORT[s.getMonth()]}</span></div>
+    <div><strong>${esc(planWhen(p, !p.end))}</strong><small>${esc(countdown(p))}</small></div></div>
+    <div class="pb-btns"><button class="pencil" data-plan="${esc(id)}">Datum wijzigen</button><button class="pencil" data-ics="${esc(id)}">Zet in agenda</button><button class="pencil" data-unplan="${esc(id)}">Niet meer gepland</button></div></div>`;
+}
 function renderSheetState(id, stampIn){
-  const cta=$('#sheetCta'), slot=$('#stampSlot'), owner=$('#sheetOwner'); if(!cta) return;
+  const cta=$('#sheetCta'), owner=$('#sheetOwner'); let slot=$('#stampSlot'); if(!cta) return;
   const it = getItem(id);
+  const e = S.entries[id];
   if(it){
     const tt = $('#sheetTitle'); if(tt && tt.textContent!==it.title) tt.textContent = it.title;
-    const bl = sheet.querySelector('.blurb'); if(bl && bl.textContent!==it.blurb) bl.textContent = it.blurb;
-    const dds = sheet.querySelectorAll('.facts dd');
-    [it.where, it.season, it.time || 'Aan jullie'].forEach((v,i)=>{ if(dds[i] && dds[i].textContent!==v) dds[i].textContent = v; });
+    const bl = sheet.querySelector('.blurb'); if(bl){ if(bl.textContent!==it.blurb) bl.textContent = it.blurb; bl.hidden = !it.blurb; }
+    const fx = $('#sheetFacts'); if(fx){ const f = factsHtml(it, e); if(fx.innerHTML!==f) fx.innerHTML = f; }
+    const sa = sheet.querySelector('.sheet-art');
+    const key = sheetPhotoKey(e);
+    if(sa && sa.dataset.photos !== key){
+      const tmp = document.createElement('div'); tmp.innerHTML = sheetArtHtml(id, it, e);
+      sa.replaceWith(tmp.firstElementChild); bindSheetPhotos();
+      slot = $('#stampSlot');
+    }
   }
-  const e = S.entries[id];
+  const sp = $('#sheetPlan'); if(sp) sp.innerHTML = (e && !e.lived && !isHidden(id, e)) ? planBox(id, e) : '';
   if(e && isPendingGift(id, e)){
     owner.innerHTML = `<div class="owner-box gift-box"><p class="for-label">Verrassing</p><div class="wants"><span class="avs"><span class="av gift">${I.gift}</span></span><span>${esc(nm(other(S.me)))} ziet alleen een envelop. De kaart opent op ${esc(fmtDay(e.surprise.openAt))}.</span></div></div>`;
     const mb0 = $('#sheetMemory'); if(mb0) mb0.innerHTML = '';
@@ -1129,6 +1163,7 @@ function renderSheetState(id, stampIn){
   }
   const pl = $('#sheetPlace');
   if(pl) pl.innerHTML = (e && it) ? placeRow(id, e, it) : '';
+  const sp2 = $('#sheetPlan'); if(sp2 && !e) sp2.innerHTML = '';
   if(!e){
     owner.innerHTML = (it && it.card) ? `<div class="owner-box"><div class="owner-top"><p class="for-label">Eigen kaart${it.by && S.names[it.by] ? ' van '+esc(nm(it.by)) : ''}</p><button class="pencil" data-cardedit="${id}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Kaart aanpassen</button></div></div>` : '';
     const mb = $('#sheetMemory'); if(mb) mb.innerHTML = '';
@@ -1139,16 +1174,17 @@ function renderSheetState(id, stampIn){
   }
   const w = e.wants||{};
   let wantsLine = '';
-  if(e.for==='both'){
+  if(e.lived) wantsLine = '';
+  else if(e.for==='both'){
     const txt = (w.a && w.b) ? 'Jullie willen dit allebei.'
       : (w[S.me] ? `Jij wilt dit. Wacht op goedkeuring van ${esc(nm(other(S.me)))}.` : (w[other(S.me)] ? `${esc(nm(other(S.me)))} wil dit samen met jou doen. Keur je het goed?` : 'Nog niemand heeft aangegeven dit te willen.'));
     wantsLine = `<div class="wants">${pairAv('', w)}<span>${txt}</span></div>`;
   } else {
     wantsLine = `<div class="wants"><span class="avs">${av(e.for)}</span><span>Een doel voor ${esc(nm(e.for))}${e.for===S.me?'':`, jij bent de supporter`}.</span></div>`;
   }
-  owner.innerHTML = `<div class="owner-box"><div class="owner-top"><p class="for-label">Op jullie lijst, voor</p><button class="pencil" data-edit="${id}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Tekst aanpassen</button></div>${forRow(id, e.for)}${wantsLine}</div>`;
+  owner.innerHTML = `<div class="owner-box"><div class="owner-top"><p class="for-label">${e.lived ? 'Herinnering van' : 'Op jullie lijst, voor'}</p><button class="pencil" data-edit="${id}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Tekst aanpassen</button></div>${forRow(id, e.for)}${wantsLine}</div>`;
   const memBox = $('#sheetMemory');
-  if(memBox) memBox.innerHTML = e.lived ? memoryBox(id, e) : '';
+  if(memBox) memBox.innerHTML = e.lived ? memoryBox(id, e, true) : '';
   cta.className = 'sheet-cta';
   if(e.lived){
     cta.innerHTML = `<button class="btn soft" style="flex:0 0 auto" data-lived="${id}">Niet beleefd</button><button class="btn gold" data-memory="${id}">Herinnering aanvullen</button>`;
@@ -1156,9 +1192,12 @@ function renderSheetState(id, stampIn){
     slot.innerHTML = `<div class="stamp ${stampIn?'in':''}"><div><span>Beleefd</span><small>${d.toLocaleDateString('nl-NL',{month:'short',year:'numeric'})}</small></div></div>`;
   } else {
     const needMine = e.for==='both' && S.me && !w[S.me];
+    const pl = planOf(e);
     cta.innerHTML = needMine
       ? `<button class="btn soft" data-remove="${id}">Nee, liever niet</button><button class="btn gold" data-want="${id}">Ik ook</button>`
-      : `<button class="btn soft" data-remove="${id}">Verwijderen</button><button class="btn gold" data-lived="${id}">Markeer als beleefd</button>`;
+      : planPast(e) ? `<button class="btn soft" data-unplan="${id}">Ging niet door</button><button class="btn gold" data-howwas="${id}">Herinnering maken</button>`
+      : pl ? `<button class="btn soft" data-remove="${id}">Verwijderen</button><button class="btn gold" data-lived="${id}">Markeer als beleefd</button>`
+      : `<button class="btn soft" data-lived="${id}">Al beleefd</button><button class="btn gold" data-plan="${id}">Plan dit</button>`;
     slot.innerHTML = '';
   }
 }
@@ -1214,12 +1253,13 @@ function resetEditor(){
 const AGAIN = [['again','Meteen weer'],['maybe','Misschien ooit'],['once','Eén keer was genoeg'],['cant','Niet mogelijk']];
 const againLabel = v => (AGAIN.find(a=>a[0]===v)||[])[1] || '';
 let memId = null, memAgain = null, uploading = [], memPlace = null, memPlaceSet = false;
-function memoryBox(id, e){
+function memoryBox(id, e, inSheet){
   const m = e.memory || {};
   const photos = livePhotos(e);
+  const strip = !inSheet || !photos.some(p=>photoPath(e, p));
   const voices = ['a','b'].filter(k=>m[k] && (m[k].moment || m[k].word || m[k].again));
   let h = `<div class="memory-box"><div class="mb-head"><div><h4>Jullie herinnering</h4><p class="mb-date">${fmtDate(livedDate(e))}</p></div><button class="pencil" data-memory="${id}">${voices.length||photos.length?'Aanvullen':'Invullen'}</button></div>`;
-  if(photos.length) h += `<div class="mem-strip">${photos.map(pid=>`<div class="ph">${imgTag(photoPath(e,pid), 'Foto bij deze ervaring')}<button data-photo="${pid}" data-photoitem="${id}" aria-label="Foto bekijken"></button></div>`).join('')}</div>`;
+  if(photos.length && strip) h += `<div class="mem-strip">${photos.map(pid=>`<div class="ph">${imgTag(photoPath(e,pid), 'Foto bij deze ervaring')}<button data-photo="${pid}" data-photoitem="${id}" aria-label="Foto bekijken"></button></div>`).join('')}</div>`;
   voices.forEach(k=>{
     const v = m[k];
     h += `<div class="voice">${av(k)}<div>${v.word?`<p class="word">${esc(v.word)}</p>`:''}${v.moment?`<p>${esc(v.moment)}</p>`:''}${v.again?`<span class="again-tag">${esc(againLabel(v.again))}</span>`:''}</div></div>`;
@@ -1346,6 +1386,7 @@ async function uploadPhotos(files, itemId){
   if(!sb || S.mode!=='ready' || !files || !files.length) return;
   for(const file of Array.from(files).slice(0, 12)){
     const token = {item:itemId}; uploading.push(token); renderMemPhotos();
+    if(!memScreen.hidden) renderMemTimeline();
     try{
       const blob = await shrink(file);
       const type = blob.type || 'image/jpeg';
@@ -1360,6 +1401,7 @@ async function uploadPhotos(files, itemId){
       toast(uploadErr(err));
     }finally{
       uploading = uploading.filter(u=>u!==token); renderMemPhotos();
+      if(!memScreen.hidden) renderMemTimeline();
     }
   }
 }
@@ -1798,7 +1840,7 @@ try{ const raw = lsGet('ooit-dobbel'); if(raw) diceF = Object.assign(diceF, JSON
 function dicePool(){
   const m = new Date().getMonth()+1;
   return listItems().filter(({id,e,item})=>{
-    if(e.lived) return false;
+    if(e.lived || planOf(e)) return false;
     if(isHidden(id, e)) return false;
     if(diceF.effort!=='all' && effortOf(item)!==diceF.effort) return false;
     if(diceF.afstand==='near' && !item.near) return false;
@@ -1882,28 +1924,66 @@ function addOwn(title){
 }
 
 /* ---------- Kaart ---------- */
-// Leaflet laadt pas als iemand de kaart opent. De kaarttegels komen van
-// OpenStreetMap. Die werken zonder API-sleutel. In donkere modus maakt de
-// CSS de tegels donker.
-let leafletP = null;
-function loadLeaflet(){
-  if(window.L) return Promise.resolve(window.L);
-  if(!leafletP) leafletP = new Promise((resolve, reject)=>{
-    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'vendor/leaflet-1.9.4.css';
+// MapLibre laadt pas als iemand de kaart opent. De kaart komt van OpenFreeMap,
+// op basis van OpenStreetMap, en toont waar mogelijk de Nederlandse namen.
+// Is OpenFreeMap niet bereikbaar, dan valt de app terug op de gewone
+// OpenStreetMap-tegels. In donkere modus maakt de CSS de kaart donker.
+const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
+const OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap-bijdragers</a>';
+let mlP = null, styleP = null, styleOfm = false;
+function loadMapLib(){
+  if(window.maplibregl) return Promise.resolve(window.maplibregl);
+  if(!mlP) mlP = new Promise((resolve, reject)=>{
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'vendor/maplibre-gl-5.24.0.css';
     document.head.appendChild(css);
-    const js = document.createElement('script'); js.src = 'vendor/leaflet-1.9.4.js';
-    js.onload = ()=>resolve(window.L);
-    js.onerror = ()=>{ leafletP = null; js.remove(); reject(new Error('leaflet')); };
+    const js = document.createElement('script'); js.src = 'vendor/maplibre-gl-5.24.0.js';
+    js.onload = ()=>window.maplibregl ? resolve(window.maplibregl) : reject(new Error('maplibre'));
+    js.onerror = ()=>{ mlP = null; js.remove(); reject(new Error('maplibre')); };
     document.head.appendChild(js);
   });
-  return leafletP;
+  return mlP;
 }
-const OSM_TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-function addTiles(L, m){
-  return L.tileLayer(OSM_TILES, {
-    maxZoom:19,
-    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap-bijdragers</a>'
-  }).addTo(m);
+// Elke naam op de kaart wordt de Nederlandse naam, met de lokale naam in
+// Latijnse letters als reserve. Wegnummers en huisnummers blijven staan.
+const NL_NAME = ['coalesce', ['get', 'name:nl'], ['get', 'name:latin'], ['get', 'name']];
+function dutchStyle(style){
+  (style.layers || []).forEach(l=>{
+    const tf = l.layout && l.layout['text-field'];
+    if(l.type !== 'symbol' || !tf) return;
+    const txt = JSON.stringify(tf);
+    if(/name/.test(txt) && !/ref|housenum/i.test(String(l.id) + txt)) l.layout['text-field'] = NL_NAME;
+  });
+  return style;
+}
+function osmStyle(){
+  return {version:8, sources:{osm:{type:'raster', tiles:[OSM_TILES], tileSize:256, maxzoom:19, attribution:OSM_ATTR}},
+    layers:[{id:'osm', type:'raster', source:'osm'}]};
+}
+function loadStyle(){
+  if(!styleP){
+    const p = withTimeout(fetch(STYLE_URL).then(r=>{ if(!r.ok) throw new Error('stijl '+r.status); return r.json(); }), 8000)
+      .then(st=>{ styleOfm = true; return dutchStyle(st); })
+      .catch(err=>{
+        console.warn('OpenFreeMap niet bereikbaar, de app gebruikt OpenStreetMap-tegels', err);
+        if(styleP === p) styleP = null;
+        styleOfm = false;
+        return osmStyle();
+      });
+    styleP = p;
+  }
+  return styleP.then(st=>JSON.parse(JSON.stringify(st)));
+}
+function newMap(mlib, container, style, opts){
+  const m = new mlib.Map(Object.assign({container, style, attributionControl:{compact:true}, dragRotate:false,
+    pitchWithRotate:false, touchPitch:false, minZoom:1, maxZoom:18, fadeDuration:150}, opts || {}));
+  if(m.touchZoomRotate) m.touchZoomRotate.disableRotation();
+  return m;
+}
+const toLngLat = ll => [ll[1], ll[0]];
+function llBounds(lls){
+  const lat = lls.map(l=>l[0]), lng = lls.map(l=>l[1]);
+  return [[Math.min(...lng), Math.min(...lat)], [Math.max(...lng), Math.max(...lat)]];
 }
 function placeOf(id, e){
   e = e || S.entries[id];
@@ -1911,76 +1991,79 @@ function placeOf(id, e){
   const b = baseItem(id);
   return b ? validLL(b.ll) : null;
 }
+const toneOf = e => ({lived:'gold', planned:'blue', ooit:'grey'})[phaseOf(e)];
 const mapPoints = () => listItems().filter(x=>!isHidden(x.id, x.e)).map(x=>Object.assign({ll:placeOf(x.id, x.e)}, x)).filter(x=>x.ll);
 const noPlaceItems = () => listItems().filter(x=>!isHidden(x.id, x.e) && !placeOf(x.id, x.e));
-let lmap = null, lTiles = null, lLayer = null, mapFitted = false, mapSel = null;
+let gmap = null, gMarkers = [], mapFitted = false, mapSel = null, markerTap = false;
 async function showMap(){
   const msg = $('#mapMsg');
-  if(!lmap){
-    let L;
-    try{ L = await loadLeaflet(); }
+  if(!gmap){
+    let mlib, style;
+    try{ mlib = await loadMapLib(); style = await loadStyle(); }
     catch(err){ msg.textContent = 'De kaart laden lukte niet. Controleer je internet en open dit tabblad opnieuw.'; msg.hidden = false; return; }
+    if(gmap) return;
+    try{ gmap = newMap(mlib, 'mapEl', style, {center:[10, 35], zoom:1.2}); }
+    catch(err){ console.error(err); msg.textContent = 'Dit apparaat kan de kaart niet tonen.'; msg.hidden = false; return; }
     msg.hidden = true;
-    lmap = L.map('mapEl', {zoomControl:false, worldCopyJump:true, minZoom:2, maxZoom:18, zoomSnap:.5});
-    lmap.setView([35, 10], 2);
-    lmap.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
-    lTiles = addTiles(L, lmap);
-    lLayer = L.layerGroup().addTo(lmap);
-    lmap.on('zoomend', drawMarkers);
-    lmap.on('click', hideMapCard);
+    gmap.on('zoomend', drawMarkers);
+    gmap.on('click', ()=>{ if(markerTap){ markerTap = false; return; } hideMapCard(); });
   }
   requestAnimationFrame(()=>{
-    if(!lmap) return;
-    lmap.invalidateSize();
+    if(!gmap) return;
+    gmap.resize();
     if(!mapFitted) fitMap();
     drawMarkers();
   });
 }
 function fitMap(){
-  if(!lmap || !S.listReady) return;
+  if(!gmap || !S.listReady) return;
   const pts = mapPoints();
   mapFitted = true;
-  if(!pts.length) lmap.setView([35, 10], 2);
-  else if(pts.length===1) lmap.setView(pts[0].ll, 6);
+  if(!pts.length) gmap.jumpTo({center:[10, 35], zoom:1.2});
+  else if(pts.length===1) gmap.jumpTo({center:toLngLat(pts[0].ll), zoom:6});
   // Bovenin liggen de titel en de knop voor plekken, daar blijven de punten vandaan.
-  else lmap.fitBounds(window.L.latLngBounds(pts.map(p=>p.ll)), {paddingTopLeft:[50, 190], paddingBottomRight:[50, 80], maxZoom:7});
+  else gmap.fitBounds(llBounds(pts.map(p=>p.ll)), {padding:{top:190, bottom:80, left:50, right:50}, maxZoom:7, duration:0});
+}
+function pinButton(html, label, onTap){
+  const el = document.createElement('button');
+  el.type = 'button'; el.className = 'pin-wrap'; el.innerHTML = html; el.setAttribute('aria-label', label);
+  el.addEventListener('click', ev=>{ ev.stopPropagation(); markerTap = true; setTimeout(()=>{ markerTap = false; }, 400); onTap(); });
+  return el;
 }
 function drawMarkers(){
-  if(!lmap || !lLayer || mapScreen.hidden) return;
-  const L = window.L;
-  lLayer.clearLayers();
+  if(!gmap || mapScreen.hidden) return;
+  const mlib = window.maplibregl;
+  gMarkers.forEach(m=>m.remove()); gMarkers = [];
   const pts = mapPoints();
   // Punten die dicht op elkaar liggen worden één bolletje met een getal.
   const groups = [];
   pts.forEach(p=>{
-    const px = lmap.latLngToLayerPoint(p.ll);
-    const g = groups.find(g=>g.px.distanceTo(px) < 30);
+    const px = gmap.project(toLngLat(p.ll));
+    const g = groups.find(g=>Math.hypot(g.px.x - px.x, g.px.y - px.y) < 30);
     if(g) g.items.push(p); else groups.push({px, items:[p]});
   });
   groups.forEach(g=>{
-    const n = g.items.length, lived = g.items.filter(x=>x.e.lived).length;
+    const n = g.items.length;
     if(n===1){
       const p = g.items[0];
-      const m = L.marker(p.ll, {title:p.item.title, keyboard:true, riseOnHover:true,
-        icon:L.divIcon({className:'pin-wrap', html:`<span class="pin ${p.e.lived?'gold':'grey'} ${mapSel===p.id?'sel':''}"></span>`, iconSize:[28,28], iconAnchor:[14,14]})});
-      m.on('click', ev=>{ L.DomEvent.stop(ev); showMapCard(p.id); });
-      m.addTo(lLayer);
+      const el = pinButton(`<span class="pin ${toneOf(p.e)} ${mapSel===p.id?'sel':''}"></span>`, p.item.title, ()=>showMapCard(p.id));
+      gMarkers.push(new mlib.Marker({element:el}).setLngLat(toLngLat(p.ll)).addTo(gmap));
       return;
     }
-    const lat = g.items.reduce((a,x)=>a+x.ll[0],0)/n, lng = g.items.reduce((a,x)=>a+x.ll[1],0)/n;
-    const tone = lived===n ? 'gold' : (lived ? 'mix' : 'grey');
-    const m = L.marker([lat, lng], {title:`${n} ervaringen`, keyboard:true,
-      icon:L.divIcon({className:'pin-wrap', html:`<span class="pin cluster ${tone}">${n}</span>`, iconSize:[36,36], iconAnchor:[18,18]})});
-    m.on('click', ev=>{
-      L.DomEvent.stop(ev);
-      const b = L.latLngBounds(g.items.map(x=>x.ll));
-      if(b.getNorthEast().distanceTo(b.getSouthWest()) < 30 || lmap.getZoom() >= 16) showMapList(g.items);
-      else lmap.flyToBounds(b, {padding:[90, 90], maxZoom:16, duration:.6});
+    const tones = [...new Set(g.items.map(x=>toneOf(x.e)))];
+    const tone = tones.length===1 ? tones[0] : 'mix';
+    const lat = g.items.reduce((a,x)=>a+x.ll[0], 0)/n, lng = g.items.reduce((a,x)=>a+x.ll[1], 0)/n;
+    const el = pinButton(`<span class="pin cluster ${tone}">${n}</span>`, `${n} ervaringen`, ()=>{
+      const b = llBounds(g.items.map(x=>x.ll));
+      const same = Math.abs(b[1][0]-b[0][0]) < 0.0004 && Math.abs(b[1][1]-b[0][1]) < 0.0004;
+      if(same || gmap.getZoom() >= 16) showMapList(g.items);
+      else gmap.fitBounds(b, {padding:90, maxZoom:16, duration:600});
     });
-    m.addTo(lLayer);
+    gMarkers.push(new mlib.Marker({element:el}).setLngLat([lng, lat]).addTo(gmap));
   });
-  const lv = pts.filter(p=>p.e.lived).length;
-  $('#mapCount').textContent = pts.length ? `${pts.length-lv} te doen, ${lv} beleefd` : 'Nog niets op de kaart';
+  const cnt = {lived:0, planned:0, ooit:0};
+  pts.forEach(p=>{ cnt[phaseOf(p.e)]++; });
+  $('#mapCount').textContent = pts.length ? `${cnt.lived} beleefd, ${cnt.planned} gepland, ${cnt.ooit} ooit` : 'Nog niets op de kaart';
   const np = noPlaceItems().length, b = $('#mapNoPlace');
   b.hidden = !np;
   b.innerHTML = `${I.pin}<span>${np===1 ? '1 ervaring zonder plek' : np+' ervaringen zonder plek'}</span>`;
@@ -1989,11 +2072,12 @@ function drawMarkers(){
 function showMapCard(id){
   const e = S.entries[id], it = getItem(id); if(!e || !it) return;
   mapSel = id;
-  const ph = livePhotos(e)[0];
+  const ph = livePhotos(e)[0], phase = phaseOf(e);
   const thumb = (e.lived && ph && photoPath(e, ph)) ? imgTag(photoPath(e, ph), '') : art(it);
+  const kicker = {lived:'Beleefd', planned:'Gepland', ooit:'Ooit'}[phase];
   const card = $('#mapCard');
-  card.innerHTML = `<button class="mc-main" data-open="${esc(id)}"><span class="mc-thumb ${e.lived?'lived':''}">${thumb}</span>
-      <span class="mc-text"><span class="mc-kicker ${e.lived?'gold':''}">${e.lived?'Beleefd':'Te doen'}</span><strong>${esc(it.title)}</strong><small>${esc(e.lived ? fmtDate(livedDate(e)) : statusText(e))}</small></span></button>
+  card.innerHTML = `<button class="mc-main" data-open="${esc(id)}"><span class="mc-thumb ${phase}">${thumb}</span>
+      <span class="mc-text"><span class="mc-kicker ${toneOf(e)}">${kicker}</span><strong>${esc(it.title)}</strong><small>${esc(e.lived ? fmtDate(livedDate(e)) : statusText(e))}</small></span></button>
     <div class="mc-btns"><button class="btn soft small" data-place="${esc(id)}">Plek wijzigen</button><button class="btn gold small" data-open="${esc(id)}">Bekijken</button></div>`;
   card.hidden = false;
   card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
@@ -2015,13 +2099,13 @@ function listSheet(title, sub, rows){
 }
 function showMapList(items){
   listSheet(`${items.length} ervaringen op deze plek`, 'Kies er een om te bekijken.',
-    items.map(x=>`<button class="pick-row" data-mapitem="${esc(x.id)}"><span class="lp-dot ${x.e.lived?'gold':'grey'}"></span><span><strong>${esc(x.item.title)}</strong><small>${esc(x.e.lived ? 'Beleefd' : statusText(x.e))}</small></span></button>`).join(''));
+    items.map(x=>`<button class="pick-row" data-mapitem="${esc(x.id)}"><span class="lp-dot ${toneOf(x.e)}"></span><span><strong>${esc(x.item.title)}</strong><small>${esc(x.e.lived ? 'Beleefd' : statusText(x.e))}</small></span></button>`).join(''));
 }
 function showNoPlace(){
   const items = noPlaceItems();
   if(!items.length) return;
   listSheet('Nog zonder plek', 'Tik op een ervaring en wijs de plek aan op de kaart.',
-    items.map(x=>`<button class="pick-row" data-placefor="${esc(x.id)}"><span class="lp-dot ${x.e.lived?'gold':'grey'}"></span><span><strong>${esc(x.item.title)}</strong><small>${esc(x.item.where)}</small></span></button>`).join(''));
+    items.map(x=>`<button class="pick-row" data-placefor="${esc(x.id)}"><span class="lp-dot ${toneOf(x.e)}"></span><span><strong>${esc(x.item.title)}</strong><small>${esc(x.item.where)}</small></span></button>`).join(''));
 }
 
 /* ---------- Plek kiezen ---------- */
@@ -2034,34 +2118,36 @@ async function openPlacePicker(ctx){
   placeEl.innerHTML = `<div class="place-map" id="placeMap"></div>
     <div class="place-top"><div><h2>${esc(ctx.heading || 'Waar is het?')}</h2><p>${esc(ctx.title || '')}</p></div><button class="icon-btn" data-action="placecancel" aria-label="Sluiten">${I.close}</button></div>
     <div class="place-bottom">
-      <p class="place-hint" id="placeHint">${placePick ? 'Tik ergens anders om de plek te verplaatsen.' : 'Tik op de kaart om de plek aan te wijzen.'}</p>
+      <p class="place-hint" id="placeHint">${placePick ? 'Tik ergens anders of sleep het punt om de plek te verplaatsen.' : 'Tik op de kaart om de plek aan te wijzen.'}</p>
       <div class="place-tools">${'geolocation' in navigator ? `<button class="btn soft small" data-action="placehere">${I.pin}Hier ben ik</button>` : ''}${ctx.allowClear && placePick ? `<button class="btn soft small" data-action="placeclear">Plek wissen</button>` : ''}</div>
       <div class="place-cta"><button class="btn soft" data-action="placecancel">${esc(ctx.skipLabel || 'Annuleren')}</button><button class="btn primary" data-action="placesave" ${placePick ? '' : 'disabled'}>Opslaan</button></div>
     </div>`;
   openLayer(placeEl);
-  let L;
-  try{ L = await loadLeaflet(); }
+  let mlib, style;
+  try{ mlib = await loadMapLib(); style = await loadStyle(); }
   catch(err){ const h = $('#placeHint'); if(h) h.textContent = 'De kaart laden lukte niet. Controleer je internet.'; return; }
   if(placeCtx !== ctx) return;
   if(pmap){ pmap.remove(); pmap = null; }
   pmarker = null;
   const hint = validLL(ctx.hint);
   const start = placePick || hint || [52.15, 5.3];
-  pmap = L.map('placeMap', {zoomControl:false, worldCopyJump:true, minZoom:2, maxZoom:18});
-  pmap.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
-  pmap.setView(start, placePick ? 12 : (hint ? 8 : 7));
-  addTiles(L, pmap);
+  try{ pmap = newMap(mlib, 'placeMap', style, {center:toLngLat(start), zoom: placePick ? 12 : (hint ? 8 : 7)}); }
+  catch(err){ const h = $('#placeHint'); if(h) h.textContent = 'Dit apparaat kan de kaart niet tonen.'; return; }
   if(placePick) setPlaceMarker(placePick);
-  pmap.on('click', ev=>setPlaceMarker([ev.latlng.lat, ev.latlng.lng]));
-  setTimeout(()=>{ if(pmap) pmap.invalidateSize(); }, 380);
+  pmap.on('click', ev=>setPlaceMarker([ev.lngLat.lat, ev.lngLat.lng]));
+  setTimeout(()=>{ if(pmap) pmap.resize(); }, 380);
 }
 function setPlaceMarker(ll){
-  const L = window.L; if(!L || !pmap) return;
+  const mlib = window.maplibregl; if(!mlib || !pmap) return;
   placePick = [round5(ll[0]), round5(wrapLng(ll[1]))];
-  if(pmarker) pmarker.setLatLng(placePick);
-  else pmarker = L.marker(placePick, {interactive:false, icon:L.divIcon({className:'pin-wrap', html:'<span class="pin gold big"></span>', iconSize:[34,34], iconAnchor:[17,17]})}).addTo(pmap);
+  if(pmarker) pmarker.setLngLat(toLngLat(placePick));
+  else {
+    const el = document.createElement('div'); el.className = 'pin-wrap'; el.innerHTML = '<span class="pin gold big"></span>';
+    pmarker = new mlib.Marker({element:el, draggable:true}).setLngLat(toLngLat(placePick)).addTo(pmap);
+    pmarker.on('dragend', ()=>{ const p = pmarker.getLngLat(); placePick = [round5(p.lat), round5(wrapLng(p.lng))]; });
+  }
   const b = placeEl.querySelector('[data-action="placesave"]'); if(b) b.disabled = false;
-  const h = $('#placeHint'); if(h) h.textContent = 'Plek gekozen. Tik ergens anders om hem te verplaatsen.';
+  const h = $('#placeHint'); if(h) h.textContent = 'Plek gekozen. Tik ergens anders of sleep het punt om hem te verplaatsen.';
 }
 function closePlace(){
   closeLayer(placeEl);
@@ -2080,7 +2166,7 @@ function placeHere(btn){
   navigator.geolocation.getCurrentPosition(pos=>{
     btn.disabled = false;
     setPlaceMarker([pos.coords.latitude, pos.coords.longitude]);
-    if(pmap) pmap.setView(placePick, 14);
+    if(pmap) pmap.jumpTo({center:toLngLat(placePick), zoom:14});
   }, ()=>{ btn.disabled = false; toast('Je locatie ophalen lukte niet. Tik zelf op de kaart.'); }, {enableHighAccuracy:true, timeout:10000, maximumAge:60000});
 }
 function placeRow(id, e, it){
@@ -2100,7 +2186,7 @@ function pickPlaceFor(id){
       if(!S.entries[id]) return;
       patchEntry(id, {place: ll, updatedBy:S.me});
       toast(ll ? 'Plek bewaard' : 'Plek gewist');
-      if(!mapScreen.hidden && ll && lmap){ lmap.setView(ll, Math.max(lmap.getZoom(), 8)); showMapCard(id); }
+      if(!mapScreen.hidden && ll && gmap){ gmap.jumpTo({center:toLngLat(ll), zoom:Math.max(gmap.getZoom(), 8)}); showMapCard(id); }
     }});
 }
 
@@ -2233,6 +2319,7 @@ function scheduleWrappedPush(){
 }
 function afterFirstLoad(){
   scheduleWrappedPush();
+  scheduleOtdPush();
   // Testlink: ?wrapped=2026 opent het overzicht, ook buiten december.
   let y = null;
   try{ y = Number(new URLSearchParams(location.search).get('wrapped')); }catch(err){}
@@ -2504,60 +2591,56 @@ function buildSlides(y, items){
   return slides;
 }
 
-// Kaartje voor "Waar we waren". Probeert kaarttegels te laden en valt terug
-// op een eenvoudig raster als dat niet lukt.
+// Kaartje voor "Waar we waren". Tekent de kaart buiten beeld met MapLibre en
+// neemt die over in de afbeelding. Lukt dat niet, dan een eenvoudig raster.
 async function wrMap(ctx, lls, X, Y, W, H){
-  const S2 = 1, T = 256;
-  const proj = (ll, z)=>{ const n = T*Math.pow(2, z), s = Math.sin(ll[0]*Math.PI/180);
-    return [(ll[1]+180)/360*n, (0.5 - Math.log((1+s)/(1-s))/(4*Math.PI))*n]; };
-  let z = 11;
-  for(; z > 1; z--){
-    const ps = lls.map(ll=>proj(ll, z));
-    const dx = Math.max(...ps.map(p=>p[0])) - Math.min(...ps.map(p=>p[0]));
-    const dy = Math.max(...ps.map(p=>p[1])) - Math.min(...ps.map(p=>p[1]));
-    if(dx*S2 <= W-260 && dy*S2 <= H-260) break;
-  }
-  if(lls.length===1) z = Math.min(z, 7);
-  const ps = lls.map(ll=>proj(ll, z));
-  const cx = (Math.max(...ps.map(p=>p[0])) + Math.min(...ps.map(p=>p[0])))/2;
-  const cy = (Math.max(...ps.map(p=>p[1])) + Math.min(...ps.map(p=>p[1])))/2;
-  const ox = cx - W/(2*S2), oy = cy - H/(2*S2), N = Math.pow(2, z);
   ctx.save(); wrRound(ctx, X, Y, W, H, 40); ctx.clip();
   ctx.fillStyle = '#131A28'; ctx.fillRect(X, Y, W, H);
-  let tilesOk = false;
+  let pts = null;
   try{
-    const jobs = [];
-    for(let tx = Math.floor(ox/T); tx <= Math.floor((ox + W/S2)/T); tx++){
-      for(let ty = Math.floor(oy/T); ty <= Math.floor((oy + H/S2)/T); ty++){
-        if(ty < 0 || ty >= N) continue;
-        const wx = ((tx % N) + N) % N;
-        const url = OSM_TILES.replace('{z}', z).replace('{x}', wx).replace('{y}', ty);
-        jobs.push(wrBitmap(url).then(img=>({img, x: X + (tx*T - ox)*S2, y: Y + (ty*T - oy)*S2})));
-      }
+    const mlib = await loadMapLib();
+    const style = await loadStyle();
+    const div = document.createElement('div');
+    div.style.cssText = `position:fixed;left:-${W+50}px;top:0;width:${W/2}px;height:${H/2}px;pointer-events:none`;
+    document.body.appendChild(div);
+    let m = null;
+    try{
+      m = new mlib.Map({container:div, style, interactive:false, attributionControl:false, pixelRatio:2, fadeDuration:0,
+        preserveDrawingBuffer:true, canvasContextAttributes:{preserveDrawingBuffer:true}, center:[0, 0], zoom:1});
+      if(lls.length===1) m.jumpTo({center:toLngLat(lls[0]), zoom:6});
+      else m.fitBounds(llBounds(lls), {padding:70, maxZoom:7, duration:0});
+      await withTimeout(new Promise(res=>m.once('idle', res)), 15000);
+      // De kaart is licht. Maak hem donker zodat hij bij het scherm past.
+      const canFilter = 'filter' in ctx;
+      if(canFilter) ctx.filter = 'invert(1) hue-rotate(180deg) brightness(.82) contrast(.9) saturate(.45)';
+      ctx.drawImage(m.getCanvas(), X, Y, W, H);
+      if(canFilter) ctx.filter = 'none';
+      else { ctx.fillStyle = 'rgba(12,16,26,.62)'; ctx.fillRect(X, Y, W, H); }
+      pts = lls.map(ll=>{ const p = m.project(toLngLat(ll)); return [X + p.x*2, Y + p.y*2]; });
+    } finally {
+      if(m) m.remove();
+      div.remove();
     }
-    const tiles = await withTimeout(Promise.all(jobs), 12000);
-    // De tegels zijn licht. Maak ze donker zodat ze bij het scherm passen.
-    const canFilter = 'filter' in ctx;
-    if(canFilter) ctx.filter = 'invert(1) hue-rotate(180deg) brightness(.82) contrast(.9) saturate(.45)';
-    tiles.forEach(t=>ctx.drawImage(t.img, t.x, t.y, T*S2, T*S2));
-    if(canFilter) ctx.filter = 'none';
-    else { ctx.fillStyle = 'rgba(12,16,26,.62)'; ctx.fillRect(X, Y, W, H); }
-    tilesOk = true;
-  }catch(err){ console.warn('Kaarttegels niet geladen, eenvoudige kaart', err); }
-  if(!tilesOk){
+  }catch(err){ console.warn('Kaart voor Wrapped niet getekend, eenvoudige kaart', err); }
+  if(!pts){
     ctx.strokeStyle = 'rgba(244,241,234,.07)'; ctx.lineWidth = 2;
     for(let gx = X; gx < X+W; gx += 80){ ctx.beginPath(); ctx.moveTo(gx, Y); ctx.lineTo(gx, Y+H); ctx.stroke(); }
     for(let gy = Y; gy < Y+H; gy += 80){ ctx.beginPath(); ctx.moveTo(X, gy); ctx.lineTo(X+W, gy); ctx.stroke(); }
+    const b = llBounds(lls), pad = 140;
+    const sx = (b[1][0]-b[0][0]) || 1, sy = (b[1][1]-b[0][1]) || 1;
+    pts = lls.map(ll=>[
+      lls.length===1 ? X+W/2 : X + pad + (ll[1]-b[0][0])/sx*(W-2*pad),
+      lls.length===1 ? Y+H/2 : Y + pad + (b[1][1]-ll[0])/sy*(H-2*pad)]);
   }
-  ps.forEach(p=>{
-    const x = X + (p[0]-ox)*S2, y = Y + (p[1]-oy)*S2;
+  pts.forEach(([x, y])=>{
     const g = ctx.createRadialGradient(x, y, 0, x, y, 70); g.addColorStop(0, 'rgba(240,180,78,.55)'); g.addColorStop(1, 'rgba(240,180,78,0)');
     ctx.fillStyle = g; ctx.fillRect(x-70, y-70, 140, 140);
     ctx.beginPath(); ctx.arc(x, y, 17, 0, Math.PI*2); ctx.fillStyle = WC.gold; ctx.fill();
     ctx.lineWidth = 6; ctx.strokeStyle = '#fff'; ctx.stroke();
   });
   ctx.restore();
-  if(tilesOk){ wrFont(ctx, 20, 'u', 600); ctx.fillStyle = 'rgba(244,241,234,.55)'; ctx.textAlign = 'right'; ctx.fillText('© OpenStreetMap-bijdragers', X+W-24, Y+H-22); }
+  wrFont(ctx, 20, 'u', 600); ctx.fillStyle = 'rgba(244,241,234,.55)'; ctx.textAlign = 'right';
+  ctx.fillText(styleOfm ? '© OpenFreeMap © OpenMapTiles © OpenStreetMap' : '© OpenStreetMap-bijdragers', X+W-24, Y+H-22);
 }
 
 /* De viewer */
@@ -2665,16 +2748,439 @@ function closeWrapped(quick){
   setTimeout(()=>urls.forEach(u=>URL.revokeObjectURL(u)), 600);
 }
 
+/* ---------- Fases: beleefd, gepland, ooit ---------- */
+// Elke ervaring zit in een van drie fases. Beleefd gaat voor, daarna een
+// datum in de planning, en anders staat hij op de lijst voor ooit.
+const MONTHS_SHORT = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+const todayIso = () => isoDate(Date.now());
+function planOf(e){
+  const p = e && e.plan;
+  if(!p || fromIso(p.start)===null) return null;
+  return {start:p.start, end: (fromIso(p.end)!==null && p.end > p.start) ? p.end : null};
+}
+function phaseOf(e){
+  if(!e) return 'ooit';
+  if(e.lived) return 'lived';
+  return planOf(e) ? 'planned' : 'ooit';
+}
+const planPast = e => { const p = planOf(e); return !!p && !e.lived && (p.end || p.start) < todayIso(); };
+function planWhen(p, long){
+  const s = new Date(fromIso(p.start));
+  const opt = long ? {weekday:'long', day:'numeric', month:'long', year:'numeric'} : {day:'numeric', month:'long', year:'numeric'};
+  if(!p.end) return s.toLocaleDateString('nl-NL', opt);
+  const e = new Date(fromIso(p.end));
+  const sameMonth = s.getMonth()===e.getMonth() && s.getFullYear()===e.getFullYear();
+  return sameMonth ? `${s.getDate()} tot en met ${e.toLocaleDateString('nl-NL', {day:'numeric', month:'long', year:'numeric'})}`
+    : `${s.toLocaleDateString('nl-NL', {day:'numeric', month:'long'})} tot en met ${e.toLocaleDateString('nl-NL', {day:'numeric', month:'long', year:'numeric'})}`;
+}
+function countdown(p){
+  const t = todayIso();
+  if(p.end && p.start <= t && p.end >= t) return 'Nu bezig';
+  const d = Math.round((fromIso(p.start) - fromIso(t)) / 86400000);
+  if(d === 0) return 'Vandaag';
+  if(d === 1) return 'Morgen';
+  if(d > 1) return `Nog ${d} dagen`;
+  return 'Geweest';
+}
+const cleanWhere = it => (it && it.where && it.where !== 'Eigen idee') ? it.where : '';
+function factsHtml(it, e){
+  const ph = phaseOf(e);
+  const c = CAT[it.cat] || CAT.eigen;
+  let rows;
+  if(e && ph==='lived') rows = [['Wanneer', fmtDate(livedDate(e))], ['Waar', cleanWhere(it)], ['Soort', c.name]];
+  else if(e && ph==='planned') rows = [['Gepland', planWhen(planOf(e))], ['Waar', cleanWhere(it)], ['Duur', it.time], ['Moeite', EFFORTS[effortOf(it)]]];
+  else rows = [['Waar', it.where], ['Beste tijd', it.season], ['Duur', it.time || 'Aan jullie'], ['Moeite', EFFORTS[effortOf(it)]]];
+  return rows.filter(r=>r[1]).map(([k, v])=>`<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+}
+
+/* ---------- Plannen ---------- */
+function openPlanForm(id){
+  if(needMe()) return;
+  const e = S.entries[id], it = getItem(id); if(!e || !it) return;
+  const p = planOf(e);
+  pickCtx = null;
+  pickerEl.innerHTML = `<div class="grabber"></div><div class="picker">
+    <h2>${p ? 'Datum wijzigen' : 'Plan dit'}</h2><p>${esc(it.title)}</p>
+    <label class="field">Wanneer<input type="date" id="planStart" value="${p ? p.start : ''}"></label>
+    <label class="check-row"><input type="checkbox" id="planMulti" ${p && p.end ? 'checked' : ''}><span>Meerdere dagen, zoals een reis</span></label>
+    <label class="field" id="planEndWrap" ${p && p.end ? '' : 'hidden'}>Tot en met<input type="date" id="planEnd" value="${p && p.end ? p.end : ''}"></label>
+    <p class="who-err" id="planErr" hidden></p>
+    <button class="btn primary block" data-action="saveplan" data-id="${esc(id)}">${p ? 'Opslaan' : 'Inplannen'}</button>
+    <button class="btn soft cancel" data-action="closepicker">Annuleren</button></div>`;
+  openLayer(pickerEl);
+  setTimeout(()=>{ const i = $('#planStart'); if(i && !i.value) i.focus({preventScroll:true}); }, 300);
+}
+function savePlan(id){
+  const e = S.entries[id], it = getItem(id); if(!e || !it) return;
+  const start = ($('#planStart')||{}).value || '';
+  const multi = ($('#planMulti')||{}).checked;
+  const end = multi ? (($('#planEnd')||{}).value || '') : '';
+  const err = $('#planErr');
+  const fail = t=>{ if(err){ err.textContent = t; err.hidden = false; } };
+  if(fromIso(start)===null) return fail('Kies een datum.');
+  if(multi && fromIso(end)===null) return fail('Kies tot wanneer.');
+  if(multi && end < start) return fail('De einddatum ligt voor de begindatum.');
+  const old = planOf(e);
+  const plan = {start, end: (multi && end > start) ? end : null};
+  patchEntry(id, {plan, updatedBy:S.me});
+  schedulePlanPush(id, old, plan);
+  closeLayer(pickerEl);
+  notify(old ? `${nm(S.me)} verzette een plan` : `${nm(S.me)} plande iets`, `${it.title}, ${planWhen(plan)}`, {tag:'plan-'+id});
+  toast(`Gepland op ${planWhen(plan)}`, ()=>{ if(!S.entries[id]) return; patchEntry(id, {plan: old || null, updatedBy:S.me}); schedulePlanPush(id, plan, old); });
+}
+function unplan(id){
+  const e = S.entries[id]; if(!e) return;
+  const old = planOf(e); if(!old) return;
+  patchEntry(id, {plan:null, updatedBy:S.me});
+  schedulePlanPush(id, old, null);
+  toast('Terug naar Ooit', ()=>{ if(!S.entries[id]) return; patchEntry(id, {plan:old, updatedBy:S.me}); schedulePlanPush(id, null, old); });
+}
+// Een dag van tevoren een melding, en de dag na afloop de vraag hoe het was.
+function planAt(iso, days, hour){ const d = new Date(fromIso(iso) + days*86400000); d.setHours(hour, 0, 0, 0); return d.getTime(); }
+function schedulePlanPush(id, oldP, newP){
+  if(oldP) ['a','b'].forEach(k=>{ unnotify(`plan:${id}:${oldP.start}:${k}`); unnotify(`planpost:${id}:${oldP.start}:${k}`); });
+  if(!newP) return;
+  const it = getItem(id); const title = it ? it.title : 'Jullie plan';
+  const before = planAt(newP.start, -1, 9), after = planAt(newP.end || newP.start, 1, 10);
+  ['a','b'].forEach(k=>{
+    if(before > Date.now()) notify(`Morgen: ${title}`, 'Staat bij jullie op de planning.', {slot:k, tag:'plan-'+id, dedupe:`plan:${id}:${newP.start}:${k}`, at:before});
+    notify('Hoe was het?', `${title}. Maak er een herinnering van.`, {slot:k, tag:'planpost-'+id, dedupe:`planpost:${id}:${newP.start}:${k}`, at:after});
+  });
+}
+function howWas(id){
+  if(needMe()) return;
+  const e = S.entries[id]; if(!e) return;
+  const p = planOf(e);
+  const date = p ? p.start : todayIso();
+  const lived = Math.min(fromIso(date), Date.now());
+  patchEntry(id, {lived, memory:{date}, updatedBy:S.me});
+  if(p) ['a','b'].forEach(k=>unnotify(`planpost:${id}:${p.start}:${k}`));
+  const it = getItem(id);
+  notify(`${nm(S.me)} maakte er een herinnering van`, it ? it.title : 'Een ervaring', {tag:'lived-'+id});
+  vibrate([10,40,14]);
+  setTimeout(()=>openMemory(id, true), 200);
+}
+// Agenda: een .ics-bestand met de datum, plek en een herinnering vooraf.
+function icsText(id){
+  const e = S.entries[id], it = getItem(id), p = planOf(e); if(!p || !it) return '';
+  const d = s=>s.replace(/-/g, '');
+  const endExcl = isoDate(fromIso(p.end || p.start) + 86400000);
+  const x = s=>String(s||'').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1');
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Ooit//NL', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
+    `UID:${id}-${p.start}@ooit`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${d(p.start)}`, `DTEND;VALUE=DATE:${d(endExcl)}`,
+    `SUMMARY:${x(it.title)}`, cleanWhere(it) ? `LOCATION:${x(cleanWhere(it))}` : '', `DESCRIPTION:${x('Gepland in Ooit.')}`,
+    'BEGIN:VALARM', 'TRIGGER:-PT15H', 'ACTION:DISPLAY', `DESCRIPTION:${x(it.title)}`, 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR'].filter(Boolean).join('\r\n');
+}
+function addToCalendar(id){
+  const ics = icsText(id); if(!ics) return;
+  const it = getItem(id);
+  const name = 'ooit-' + (it.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'plan') + '.ics';
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints > 1);
+  if(ios){
+    // Op de iPhone opent het agendabestand in een apart venster met "Voeg toe
+    // aan agenda". De app zelf blijft open. Lukt dat niet, dan het deelmenu.
+    const w = window.open('data:text/calendar;charset=utf-8,' + encodeURIComponent(ics), '_blank');
+    if(w) return;
+    const file = new File([ics], name, {type:'text/calendar'});
+    if(navigator.canShare && navigator.share && navigator.canShare({files:[file]})) navigator.share({files:[file], title:it.title}).catch(()=>{});
+    else toast('De agenda openen lukte niet op dit toestel.');
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], {type:'text/calendar'})); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  toast('Agendabestand gedownload. Open het om de afspraak toe te voegen.');
+}
+
+/* ---------- Herinneringen ---------- */
+let memFor = 'all', memQuery = '';
+const memItems = () => listItems().filter(x=>x.e.lived && !isHidden(x.id, x.e)).sort((a,b)=>livedDate(b.e)-livedDate(a.e));
+const planItems = () => listItems().filter(x=>phaseOf(x.e)==='planned' && !isHidden(x.id, x.e))
+  .sort((a,b)=>planOf(a.e).start < planOf(b.e).start ? -1 : 1);
+function onThisDay(){
+  const d = new Date();
+  return memItems().filter(x=>{ const t = new Date(livedDate(x.e)); return t.getFullYear() < d.getFullYear() && t.getMonth()===d.getMonth() && t.getDate()===d.getDate(); });
+}
+function firstPhoto(e){ const ph = livePhotos(e).find(p=>photoPath(e, p)); return ph ? photoPath(e, ph) : ''; }
+function memCard({id, e, item}){
+  const photos = livePhotos(e).filter(p=>photoPath(e, p));
+  const m = e.memory || {};
+  const d = new Date(livedDate(e));
+  const words = ['a','b'].filter(k=>m[k] && m[k].word).map(k=>`<p class="mw">${av(k,'sm')}<span>${esc(m[k].word)}</span></p>`).join('');
+  const up = uploading.filter(u=>u.item===id).length;
+  const where = cleanWhere(item);
+  return `<article class="mem-card" data-open="${esc(id)}">
+    <div class="mcard-media">${photos.length ? imgTag(photoPath(e, photos[0]), item.title) : art(item)}
+      <span class="mcard-date"><b>${d.getDate()}</b>${MONTHS_SHORT[d.getMonth()]}</span>
+      ${up ? `<span class="mcard-count">Foto's uploaden</span>` : (photos.length > 1 ? `<span class="mcard-count">${photos.length} foto's</span>` : '')}
+    </div>
+    <div class="mcard-body"><h3>${esc(item.title)}</h3>${where ? `<p class="mcard-where">${I.pin}<span>${esc(where)}</span></p>` : ''}${words}</div>
+  </article>`;
+}
+function howWasCard({id, e, item}){
+  return `<div class="howwas"><div class="hw-text"><small>${esc(planWhen(planOf(e)))}</small><strong>${esc(item.title)}</strong><span>Hoe was het?</span></div>
+    <div class="hw-btns"><button class="btn gold small" data-howwas="${esc(id)}">Herinnering maken</button><button class="btn soft small" data-unplan="${esc(id)}">Ging niet door</button></div></div>`;
+}
+function planCard({id, e, item}){
+  const p = planOf(e), s = new Date(fromIso(p.start));
+  const cd = countdown(p);
+  const soon = cd==='Vandaag' || cd==='Morgen' || cd==='Nu bezig';
+  return `<article class="plan-card" data-open="${esc(id)}"><div class="pc-date"><b>${s.getDate()}</b><span>${MONTHS_SHORT[s.getMonth()]}</span></div>
+    <div class="pc-text"><strong>${esc(item.title)}</strong><small>${esc(p.end ? planWhen(p) : (cleanWhere(item) || planWhen(p, true)))}</small><span class="pc-count ${soon?'soon':''}">${cd}</span></div>${rowAv(e)}</article>`;
+}
+function statusBanner(){
+  return S.mode==='config' ? `<div class="banner">De koppeling met Supabase ontbreekt. Vul config.js in, zie de README.</div>`
+    : S.mode==='broken' ? `<div class="banner">Jullie gegevens zijn nu niet bereikbaar. Controleer je internet. Is het Supabase-project gepauzeerd, herstel het dan in het Supabase-dashboard.</div><div style="padding:10px 20px 0"><button class="btn soft small" data-action="retry">Opnieuw proberen</button></div>` : '';
+}
+function renderMemories(){
+  let h = `<div class="largetitle home-head"><h1>Ooit</h1><p>Wat we deden, wat we plannen en wat we ooit nog willen.</p></div>`;
+  if(!S.listReady){ memContent.innerHTML = h + `<div class="loading">Jullie herinneringen worden geladen</div>`; return; }
+  h += statusBanner();
+  h += wrappedBanner();
+  const otd = onThisDay();
+  otd.slice(0, 3).forEach(x=>{
+    const yrs = new Date().getFullYear() - new Date(livedDate(x.e)).getFullYear();
+    const ph = firstPhoto(x.e);
+    h += `<button class="otd" data-open="${esc(x.id)}"><span class="otd-media">${ph ? imgTag(ph, '') : art(x.item)}</span><span class="otd-text"><small>Vandaag ${yrs===1 ? '1 jaar' : yrs+' jaar'} geleden</small><strong>${esc(x.item.title)}</strong></span></button>`;
+  });
+  const past = planItems().filter(x=>planPast(x.e));
+  if(past.length) h += `<div class="group-head"><h2>Hoe was het?</h2><span class="count">${past.length}</span></div><div class="howwas-list">${past.map(howWasCard).join('')}</div>`;
+  const next = planItems().filter(x=>!planPast(x.e))[0];
+  if(next){
+    const p = planOf(next.e), d = Math.round((fromIso(p.start) - fromIso(todayIso()))/86400000);
+    if(d <= 30) h += `<button class="soon-strip" data-tab="planned">${I.pin}<span><small>${esc(countdown(p))}</small><strong>${esc(next.item.title)}</strong></span><span class="ss-go">Gepland</span></button>`;
+  }
+  h += `<button class="add-mem" data-action="newmemory"><span class="am-plus">${I.plus}</span><span><strong>Herinnering toevoegen</strong><small>Foto's, datum, plek en jullie verhaal</small></span></button>`;
+  const all = memItems();
+  if(all.length){
+    const fl = [['all','Alles'],['both','Samen'],['a',nm('a')],['b',nm('b')]];
+    h += `<label class="search mem-search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="memQ" type="search" placeholder="Zoek in jullie herinneringen" autocomplete="off" aria-label="Zoek in jullie herinneringen" value="${esc(memQuery)}"></label>`;
+    h += `<div class="filters" role="tablist" aria-label="Van wie">${fl.map(([k,l])=>`<button class="chip" role="tab" data-memfor="${k}" aria-selected="${memFor===k}">${k==='all'?'':k==='both'?pairAv('sm'):av(k,'sm')}${esc(l)}</button>`).join('')}</div>`;
+  }
+  h += `<div id="memTimeline"></div>`;
+  h += wrappedArchive();
+  memContent.innerHTML = h;
+  renderMemTimeline();
+}
+function renderMemTimeline(){
+  const box = $('#memTimeline'); if(!box) return;
+  const all = memItems();
+  if(!all.length){
+    box.innerHTML = `<div class="empty"><div class="empty-art">${art({id:'firstmem', motif:'frames', pal:'sunrise'})}</div><h3>Nog geen herinneringen</h3><p>Leg vast wat jullie samen deden. Met foto's, de plek en wat jullie erover kwijt willen.</p><button class="btn primary" data-action="newmemory">Eerste herinnering toevoegen</button></div>`;
+    return;
+  }
+  const q = memQuery.toLowerCase();
+  const list = all.filter(x=>(memFor==='all' || x.e.for===memFor) && (!q || (x.item.title+' '+x.item.where+' '+JSON.stringify((x.e.memory||{}).a||'')+JSON.stringify((x.e.memory||{}).b||'')).toLowerCase().includes(q)));
+  if(!list.length){ box.innerHTML = `<div class="empty"><h3>Niets gevonden</h3><p>Probeer een ander woord of een ander filter.</p></div>`; return; }
+  let h = '', year = null, month = null;
+  list.forEach(x=>{
+    const d = new Date(livedDate(x.e));
+    if(d.getFullYear() !== year){
+      year = d.getFullYear(); month = null;
+      const n = list.filter(y=>new Date(livedDate(y.e)).getFullYear()===year).length;
+      h += `<div class="year-head"><h2>${year}</h2><span class="count">${n===1 ? '1 herinnering' : n+' herinneringen'}</span></div>`;
+    }
+    if(d.getMonth() !== month){ month = d.getMonth(); h += `<h3 class="month-head">${MONTHS[month]}</h3>`; }
+    h += memCard(x);
+  });
+  box.innerHTML = h;
+  hydrate();
+}
+
+/* ---------- Gepland ---------- */
+function renderPlanned(){
+  let h = `<div class="list-head"><h1>Gepland</h1>`;
+  if(!S.listReady){ planContent.innerHTML = h + `</div><div class="loading">Even geduld</div>`; return; }
+  const items = planItems();
+  const past = items.filter(x=>planPast(x.e)), next = items.filter(x=>!planPast(x.e));
+  h += `<p>${next.length ? (next.length===1 ? '1 plan op de agenda' : next.length+' plannen op de agenda') : 'Nog niets op de agenda'}</p></div>`;
+  h += statusBanner();
+  if(past.length) h += `<div class="group-head"><h2>Hoe was het?</h2><span class="count">${past.length}</span></div><div class="howwas-list">${past.map(howWasCard).join('')}</div>`;
+  if(next.length){
+    let month = null;
+    next.forEach(x=>{
+      const s = new Date(fromIso(planOf(x.e).start));
+      const key = s.getFullYear()*12 + s.getMonth();
+      if(key !== month){ month = key; h += `<h3 class="month-head">${MONTHS[s.getMonth()]} ${s.getFullYear()}</h3>`; }
+      h += planCard(x);
+    });
+  } else if(!past.length){
+    h += `<div class="empty"><div class="empty-art">${art({id:'noplan', motif:'sun', pal:'sky'})}</div><h3>Nog niets gepland</h3><p>Kies iets uit Ooit en tik op Plan dit. Dan zien jullie hier wat eraan komt.</p><button class="btn primary" data-tab="mylist">Naar Ooit</button></div>`;
+  }
+  planContent.innerHTML = h;
+  hydrate();
+}
+function updatePlanBadge(){
+  const n = planItems().filter(x=>planPast(x.e)).length;
+  const b = $('#planBadge'); if(!b) return;
+  b.hidden = n===0; b.textContent = n;
+}
+
+/* ---------- Losse herinnering toevoegen ---------- */
+// Een herinnering die nooit op de lijst stond. Eerst de foto's, dan de rest.
+let newMem = null;
+function openNewMemory(){
+  if(needMe()) return;
+  newMem = {files:[], previews:[], ll:null, cat:'eigen', who:'both', dateTouched:false, found:''};
+  const t = todayIso();
+  const chips = (attr, opts, cur) => opts.map(([k, l, dot])=>`<button type="button" class="opt-chip" data-${attr}="${k}" aria-pressed="${cur===k}">${dot?`<span class="dot" style="background:${dot}"></span>`:''}${esc(l)}</button>`).join('');
+  editorEl.innerHTML = `<div class="grabber"></div>
+    <div class="sheet-top"><button class="icon-btn" data-action="closenewmemory" aria-label="Sluiten">${I.close}</button></div>
+    <div class="sheet-scroll"><div class="form">
+      <h2 id="edTitle">Herinnering toevoegen</h2>
+      <p class="sub">Iets wat jullie deden. Het hoeft niet op de lijst te hebben gestaan.</p>
+      <div class="q"><h3>Foto's</h3><p class="hint">Kies eerst je foto's. Staan de datum en plek erin, dan vult de app die zelf in.</p><div id="nmPhotos"></div></div>
+      <label class="field">Wat deden jullie?<input id="nm_title" maxlength="90" placeholder="Bijvoorbeeld: pizza eten in Napels"></label>
+      <label class="field">Wanneer<input type="date" id="nm_date" value="${t}" max="${t}"></label>
+      <label class="field">Waar<input id="nm_where" maxlength="80" placeholder="Bijvoorbeeld: Napels"></label>
+      <div class="field">Plek op de kaart<div id="nmPlace"></div></div>
+      <div class="field">Van wie<div class="opt-chips">${chips('nmwho', [['both','Samen'], [S.me, 'Van mij'], [other(S.me), 'Van '+nm(other(S.me))]], 'both')}</div></div>
+      <div class="field">Soort<div class="opt-chips">${chips('nmcat', CATS.map(c=>[c.id, c.short, c.color]), 'eigen')}</div></div>
+      <label class="field">Wat wil je erover kwijt?<textarea id="nm_moment" rows="3" maxlength="600" placeholder="Toen we..."></textarea></label>
+      <label class="field">In een woord of zin<input id="nm_word" maxlength="90" placeholder="Bijvoorbeeld: ademloos"></label>
+      <p class="who-err" id="nmErr" hidden></p>
+    </div></div>
+    <div class="sheet-cta"><button class="btn soft" data-action="closenewmemory">Annuleren</button><button class="btn primary" data-action="savenewmemory">Bewaren</button></div>`;
+  renderNmPhotos(); renderNmPlace();
+  openLayer(editorEl);
+}
+function closeNewMemory(){
+  if(newMem) newMem.previews.forEach(u=>URL.revokeObjectURL(u));
+  newMem = null;
+  closeLayer(editorEl);
+}
+function renderNmPhotos(){
+  const box = $('#nmPhotos'); if(!box || !newMem) return;
+  box.innerHTML = `<div class="photo-grid">${newMem.previews.map((u, i)=>`<div class="ph"><img src="${esc(u)}" alt="" onerror="this.parentNode.classList.add('broken');this.remove()"><button class="ph-x" data-nmremove="${i}" aria-label="Foto weghalen">${I.close}</button></div>`).join('')}
+    ${newMem.files.length < 12 ? `<label class="ph-add"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M9 6l1.5-2h3L15 6"/></svg>Foto's kiezen<input type="file" id="nmFile" accept="image/*" multiple></label>` : ''}</div>
+    ${newMem.found ? `<p class="nm-found">${esc(newMem.found)}</p>` : ''}`;
+}
+function renderNmPlace(){
+  const box = $('#nmPlace'); if(!box || !newMem) return;
+  box.innerHTML = `<button type="button" class="place-row ${newMem.ll?'on':''}" data-action="nmplace">${I.pin}<span><strong>${newMem.ll ? 'Plek gekozen' : 'Nog geen plek'}</strong><small>${newMem.ll ? 'Tik om te wijzigen' : 'Optioneel. Tik om de plek aan te wijzen'}</small></span></button>`;
+}
+async function addNmFiles(files){
+  if(!newMem || !files) return;
+  const list = Array.from(files).slice(0, 12 - newMem.files.length);
+  const mem = newMem;
+  for(const f of list){ mem.files.push(f); mem.previews.push(URL.createObjectURL(f)); }
+  renderNmPhotos();
+  // Datum en plek uit de eerste foto die ze heeft.
+  const found = [];
+  for(const f of list){
+    const ex = await readExif(f);
+    if(!ex || newMem !== mem) continue;
+    if(ex.date && !mem.dateTouched){
+      const di = $('#nm_date');
+      if(di && ex.date <= todayIso()){ di.value = ex.date; mem.dateTouched = true; found.push('de datum'); }
+    }
+    if(ex.ll && !mem.ll){ mem.ll = ex.ll; found.push('de plek'); renderNmPlace(); }
+    if(mem.dateTouched && mem.ll) break;
+  }
+  if(newMem === mem && found.length){ mem.found = `De app haalde ${found.join(' en ')} uit je foto.`; renderNmPhotos(); }
+}
+function saveNewMemory(){
+  if(!newMem) return;
+  const val = k => (($('#nm_'+k)||{}).value || '').trim();
+  const title = val('title'), date = val('date') || todayIso();
+  const err = $('#nmErr');
+  if(!title){ if(err){ err.textContent = 'Geef de herinnering een titel.'; err.hidden = false; } return; }
+  if(fromIso(date)===null){ if(err){ err.textContent = 'Kies een datum.'; err.hidden = false; } return; }
+  const id = 'mem-'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
+  const r = rng(hash(title + id));
+  const custom = {kind:'memory', title, where: val('where'), cat: newMem.cat,
+    motif: OWN_MOTIFS[Math.floor(r()*OWN_MOTIFS.length)], pal: PAL_KEYS[Math.floor(r()*PAL_KEYS.length)]};
+  const who = newMem.who;
+  const mine = {moment: val('moment'), word: val('word'), again: null};
+  const body = {for: who, addedBy:S.me, addedAt:Date.now(), lived: Math.min(fromIso(date), Date.now()),
+    wants: who==='both' ? {a:true, b:true} : {}, updatedBy:S.me, custom, memory:{date}};
+  if(mine.moment || mine.word) body.memory[S.me] = mine;
+  if(newMem.ll) body.place = newMem.ll;
+  const files = newMem.files.slice();
+  closeNewMemory();
+  putEntry(id, body);
+  notify(`${nm(S.me)} legde een herinnering vast`, title, {tag:'mem-'+id});
+  toast(files.length ? 'Herinnering bewaard. De foto\u2019s worden geüpload.' : 'Herinnering bewaard');
+  memFor = 'all'; memQuery = '';
+  setTab('memories');
+  if(files.length) uploadPhotos(files, id);
+}
+// Leest de opnamedatum en GPS-plek uit een JPEG. Geeft null als die er niet in staan.
+async function readExif(file){
+  try{
+    const buf = await file.slice(0, 256*1024).arrayBuffer();
+    const v = new DataView(buf);
+    if(v.byteLength < 12 || v.getUint16(0) !== 0xFFD8) return null;
+    let off = 2;
+    while(off + 10 < v.byteLength){
+      const marker = v.getUint16(off), len = v.getUint16(off+2);
+      if(marker === 0xFFE1 && v.getUint32(off+4) === 0x45786966) return exifTiff(v, off+10);
+      if((marker & 0xFF00) !== 0xFF00 || marker === 0xFFDA) break;
+      off += 2 + len;
+    }
+  }catch(err){}
+  return null;
+}
+function exifTiff(v, t){
+  const le = v.getUint16(t) === 0x4949;
+  const u16 = o=>v.getUint16(o, le), u32 = o=>v.getUint32(o, le);
+  const ifd = o=>{ const tags = {}; const n = u16(o); for(let i=0; i<n; i++){ const p = o+2+i*12; tags[u16(p)] = {count:u32(p+4), at:p+8}; } return tags; };
+  const ascii = tg=>{ const o = tg.count > 4 ? t + u32(tg.at) : tg.at; let s = ''; for(let i=0; i<tg.count; i++){ const c = v.getUint8(o+i); if(!c) break; s += String.fromCharCode(c); } return s; };
+  const rats = tg=>{ const o = t + u32(tg.at); const out = []; for(let i=0; i<tg.count; i++) out.push(u32(o+i*8) / (u32(o+i*8+4) || 1)); return out; };
+  const ifd0 = ifd(t + u32(t+4));
+  let raw = null, ll = null;
+  if(ifd0[0x8769]){ const ex = ifd(t + u32(ifd0[0x8769].at)); const tg = ex[0x9003] || ex[0x9004]; if(tg) raw = ascii(tg); }
+  if(!raw && ifd0[0x0132]) raw = ascii(ifd0[0x0132]);
+  if(ifd0[0x8825]){
+    const g = ifd(t + u32(ifd0[0x8825].at));
+    if(g[2] && g[4]){
+      const a = rats(g[2]), b = rats(g[4]);
+      let lat = a[0] + (a[1]||0)/60 + (a[2]||0)/3600, lng = b[0] + (b[1]||0)/60 + (b[2]||0)/3600;
+      if(g[1] && ascii(g[1]).toUpperCase()==='S') lat = -lat;
+      if(g[3] && ascii(g[3]).toUpperCase()==='W') lng = -lng;
+      if(lat || lng) ll = validLL([Math.round(lat*1e5)/1e5, Math.round(lng*1e5)/1e5]);
+    }
+  }
+  const m = /^(\d{4}):(\d{2}):(\d{2})/.exec(raw || '');
+  const date = m && m[1] !== '0000' ? `${m[1]}-${m[2]}-${m[3]}` : null;
+  return (date || ll) ? {date, ll} : null;
+}
+// Op deze dag: zet een melding klaar voor de jaardag van een herinnering.
+function scheduleOtdPush(){
+  const now = new Date(), y = now.getFullYear();
+  memItems().forEach(x=>{
+    const t = new Date(livedDate(x.e));
+    let next = new Date(y, t.getMonth(), t.getDate(), 9, 0, 0);
+    if(next.getTime() <= Date.now()) next = new Date(y+1, t.getMonth(), t.getDate(), 9, 0, 0);
+    const yrs = next.getFullYear() - t.getFullYear();
+    if(yrs < 1 || next.getTime() - Date.now() > 45*86400000) return;
+    const key = `ooit-otd-${x.id}-${next.getFullYear()}`;
+    if(lsGet(key)) return;
+    ['a','b'].forEach(k=>notify(`Vandaag ${yrs===1 ? '1 jaar' : yrs+' jaar'} geleden`, x.item.title, {slot:k, tag:'otd-'+x.id, dedupe:`otd:${x.id}:${next.getFullYear()}:${k}`, at:next.getTime()}));
+    lsSet(key, '1');
+  });
+}
+
 /* ---------- Tabs ---------- */
 function setTab(t){
-  const screens = {browse, mylist, map:mapScreen};
-  if(!screens[t]) t = 'browse';
-  Object.keys(screens).forEach(k=>{ screens[k].hidden = k!==t; });
+  // Oude namen blijven werken: Ontdekken en Onze lijst zitten nu onder Ooit.
+  if(t==='mylist'){ ooitView = 'list'; t = 'ooit'; }
+  else if(t==='browse' || t==='ideas'){ ooitView = 'ideas'; t = 'ooit'; }
+  const screens = {memories:memScreen, map:mapScreen, planned:planScreen, list:mylist, ideas:browse};
+  let show = t==='ooit' ? ooitView : t;
+  if(!screens[show]){ t = 'memories'; show = 'memories'; }
+  Object.keys(screens).forEach(k=>{ screens[k].hidden = k!==show; });
   document.querySelectorAll('.tab[data-tab]').forEach(b=>{ if(b.dataset.tab===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
-  if(t!=='mylist') listEdit = false;
-  if(t==='mylist'){ renderList(); mylist.scrollTop = 0; }
-  else if(t==='map') showMap();
-  else renderBrowse();
+  if(t==='ooit') lsSet('ooit-view', ooitView);
+  if(show!=='list') listEdit = false;
+  if(show==='list'){ renderList(); mylist.scrollTop = 0; }
+  else if(show==='ideas'){ renderBrowse(); const sg = browse.querySelector('.ooit-seg'); if(sg){ sg.dataset.v = 'ideas'; } }
+  else if(show==='memories'){ renderMemories(); memScreen.scrollTop = 0; }
+  else if(show==='planned'){ renderPlanned(); planScreen.scrollTop = 0; }
+  else if(show==='map') showMap();
 }
 
 /* ---------- Events ---------- */
@@ -2712,6 +3218,15 @@ app.addEventListener('click', ev=>{
   if((el = hit('[data-again]'))){ memAgain = memAgain===el.dataset.again ? null : el.dataset.again; memoryEl.querySelectorAll('[data-again]').forEach(b=>b.setAttribute('aria-checked', b.dataset.again===memAgain)); return; }
   if((el = hit('[data-photo]'))){ openLightbox(el.dataset.photo, el.dataset.photoitem); return; }
   if((el = hit('[data-swipe]'))){ commitSwipe(el.dataset.swipe); return; }
+  if((el = hit('[data-ooit]'))){ ooitView = el.dataset.ooit==='ideas' ? 'ideas' : 'list'; if(sheet.classList.contains('show')) closeLayer(sheet); setTab('ooit'); return; }
+  if((el = hit('[data-memfor]'))){ memFor = el.dataset.memfor; memContent.querySelectorAll('[data-memfor]').forEach(b=>b.setAttribute('aria-selected', b===el)); renderMemTimeline(); return; }
+  if((el = hit('[data-plan]'))){ openPlanForm(el.dataset.plan); return; }
+  if((el = hit('[data-unplan]'))){ unplan(el.dataset.unplan); return; }
+  if((el = hit('[data-howwas]'))){ if(sheet.classList.contains('show')) closeLayer(sheet); howWas(el.dataset.howwas); return; }
+  if((el = hit('[data-ics]'))){ addToCalendar(el.dataset.ics); return; }
+  if((el = hit('[data-nmwho]'))){ if(newMem){ newMem.who = el.dataset.nmwho; editorEl.querySelectorAll('[data-nmwho]').forEach(b=>b.setAttribute('aria-pressed', b===el)); } return; }
+  if((el = hit('[data-nmcat]'))){ if(newMem){ newMem.cat = el.dataset.nmcat; editorEl.querySelectorAll('[data-nmcat]').forEach(b=>b.setAttribute('aria-pressed', b===el)); } return; }
+  if((el = hit('[data-nmremove]'))){ if(newMem){ const i = Number(el.dataset.nmremove); URL.revokeObjectURL(newMem.previews[i]); newMem.files.splice(i, 1); newMem.previews.splice(i, 1); renderNmPhotos(); } return; }
   if((el = hit('[data-newcard]'))){ openCardForm({title:el.dataset.newcard}); return; }
   if((el = hit('[data-cardedit]'))){ openCardForm({id:el.dataset.cardedit}); return; }
   if((el = hit('[data-cardcat]'))){ if(cardEdit){ cardEdit.cat = el.dataset.cardcat; editorEl.querySelectorAll('[data-cardcat]').forEach(b=>b.setAttribute('aria-pressed', b===el)); } return; }
@@ -2733,7 +3248,12 @@ app.addEventListener('click', ev=>{
   if((el = hit('[data-tab]'))){ if(sheet.classList.contains('show')) closeLayer(sheet); setTab(el.dataset.tab); return; }
   if((el = hit('[data-action]'))){
     const a = el.dataset.action;
-    if(a==='swipe'){ if(sheet.classList.contains('show')) closeLayer(sheet); openSwipe(); }
+    if(a==='newmemory'){ if(sheet.classList.contains('show')) closeLayer(sheet); openNewMemory(); }
+    else if(a==='closenewmemory') closeNewMemory();
+    else if(a==='savenewmemory') saveNewMemory();
+    else if(a==='nmplace'){ if(newMem){ const t = (($('#nm_title')||{}).value||'').trim(); openPlacePicker({heading:'Waar was het?', title:t || 'Nieuwe herinnering', current:newMem.ll, allowClear:!!newMem.ll, onDone: ll=>{ if(newMem){ newMem.ll = ll; renderNmPlace(); } }}); } }
+    else if(a==='saveplan') savePlan(el.dataset.id);
+    else if(a==='swipe'){ if(sheet.classList.contains('show')) closeLayer(sheet); openSwipe(); }
     else if(a==='closeswipe'){ closeLayer(swipeEl); lastSwipe = null; }
     else if(a==='swipeundo') swipeUndo();
     else if(a==='swipereset') swipeReset();
@@ -2793,7 +3313,7 @@ app.addEventListener('click', ev=>{
 });
 backdrop.addEventListener('click', ()=>{
   if(gateEl.classList.contains('show')){ if(!gateForced) closeLayer(gateEl); return; }
-  if(editorEl.classList.contains('show')){ closeLayer(editorEl); return; }
+  if(editorEl.classList.contains('show')){ if(newMem) closeNewMemory(); else closeLayer(editorEl); return; }
   if(memoryEl.classList.contains('show')){ closeLayer(memoryEl); return; }
   if(pickerEl.classList.contains('show')){ pickCtx=null; closeLayer(pickerEl); return; }
   if(sheet.classList.contains('show')) closeLayer(sheet);
@@ -2807,7 +3327,7 @@ document.addEventListener('keydown', ev=>{
     else if(wrEl.classList.contains('show')) closeWrapped();
     else if(lightbox.classList.contains('show')) closeLayer(lightbox);
     else if(matchEl.classList.contains('show')) closeLayer(matchEl);
-    else if(editorEl.classList.contains('show')) closeLayer(editorEl);
+    else if(editorEl.classList.contains('show')){ if(newMem) closeNewMemory(); else closeLayer(editorEl); }
     else if(memoryEl.classList.contains('show')) closeLayer(memoryEl);
     else if(gateEl.classList.contains('show')){ if(!gateForced) closeLayer(gateEl); }
     else if(pickerEl.classList.contains('show')){ pickCtx=null; closeLayer(pickerEl); }
@@ -2819,10 +3339,17 @@ document.addEventListener('keydown', ev=>{
 });
 app.addEventListener('change', ev=>{
   if(ev.target && ev.target.id==='memFile'){ const files = ev.target.files; uploadPhotos(files, memId); ev.target.value=''; }
+  if(ev.target && ev.target.id==='nmFile'){ const files = Array.from(ev.target.files || []); ev.target.value=''; addNmFiles(files); }
+  if(ev.target && ev.target.id==='planMulti'){ const w = $('#planEndWrap'); if(w) w.hidden = !ev.target.checked; const e2 = $('#planEnd'), s2 = $('#planStart'); if(ev.target.checked && e2 && s2 && !e2.value && s2.value) e2.value = s2.value; }
+});
+let mqTimer;
+app.addEventListener('input', ev=>{
+  if(ev.target && ev.target.id==='memQ'){ clearTimeout(mqTimer); const v = ev.target.value; mqTimer = setTimeout(()=>{ memQuery = v.trim(); renderMemTimeline(); }, 140); }
+  if(ev.target && ev.target.id==='nm_date' && newMem) newMem.dateTouched = true;
 });
 let qTimer;
 $('#q').addEventListener('input', ev=>{ clearTimeout(qTimer); qTimer=setTimeout(()=>{ query=ev.target.value.trim(); if(query) cat='all'; renderBrowse(); }, 140); });
-[[browse,'#nav'],[mylist,'#nav2']].forEach(([scr,sel])=>{
+[[browse,'#nav'],[mylist,'#nav2'],[memScreen,'#navM'],[planScreen,'#navP']].forEach(([scr,sel])=>{
   const nav=$(sel);
   scr.addEventListener('scroll', ()=>nav.classList.toggle('scrolled', scr.scrollTop>56), {passive:true});
 });
@@ -2838,7 +3365,7 @@ $('#q').addEventListener('input', ev=>{ clearTimeout(qTimer); qTimer=setTimeout(
 });
 
 /* ---------- Start ---------- */
-renderBrowse();
+setTab('memories');
 refreshAll();
 initSupabase();
 if('serviceWorker' in navigator && location.protocol==='https:'){
