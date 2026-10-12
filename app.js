@@ -303,6 +303,8 @@ const I = {
   gift:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16v9H4z"/><path d="M3 7.5h18V11H3z"/><path d="M12 7.5V20"/><path d="M12 7.5S10.5 4 8.2 4a2.1 2.1 0 0 0 0 3.5zM12 7.5s1.5-3.5 3.8-3.5a2.1 2.1 0 0 1 0 3.5z"/></svg>'
 };
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Tekst met enters: elke enter wordt een echte nieuwe regel.
+const escLines = s => esc(String(s==null?'':s).replace(/\r\n?/g, '\n').trim()).replace(/\n/g, '<br>');
 const $ = s => document.querySelector(s);
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
@@ -1262,7 +1264,7 @@ function memoryBox(id, e, inSheet){
   if(photos.length && strip) h += `<div class="mem-strip">${photos.map(pid=>`<div class="ph">${imgTag(photoPath(e,pid), 'Foto bij deze ervaring')}<button data-photo="${pid}" data-photoitem="${id}" aria-label="Foto bekijken"></button></div>`).join('')}</div>`;
   voices.forEach(k=>{
     const v = m[k];
-    h += `<div class="voice">${av(k)}<div>${v.word?`<p class="word">${esc(v.word)}</p>`:''}${v.moment?`<p>${esc(v.moment)}</p>`:''}${v.again?`<span class="again-tag">${esc(againLabel(v.again))}</span>`:''}</div></div>`;
+    h += `<div class="voice">${av(k)}<div>${v.word?`<p class="word">${esc(v.word)}</p>`:''}${v.moment?`<p>${escLines(v.moment)}</p>`:''}${v.again?`<span class="again-tag">${esc(againLabel(v.again))}</span>`:''}</div></div>`;
   });
   if(!voices.length && !photos.length) h += `<p class="mem-empty">Nog niets ingevuld. Vertel hoe het was en voeg foto’s toe.</p>`;
   return h + `</div>`;
@@ -1271,7 +1273,7 @@ function partnerNote(m, field){
   const o = other(S.me), v = m[o] && m[o][field];
   if(!v) return '';
   const txt = field==='again' ? againLabel(v) : v;
-  return `<p class="partner">${av(o,'sm')}<span><strong>${esc(nm(o))}:</strong> ${esc(txt)}</span></p>`;
+  return `<p class="partner">${av(o,'sm')}<span><strong>${esc(nm(o))}:</strong> ${escLines(txt)}</span></p>`;
 }
 function openMemory(id, fresh){
   if(needMe()) return;
@@ -2908,7 +2910,7 @@ function memCard({id, e, item}){
   const photos = livePhotos(e).filter(p=>photoPath(e, p));
   const m = e.memory || {};
   const d = new Date(livedDate(e));
-  const words = ['a','b'].filter(k=>m[k] && (m[k].word || m[k].moment)).map(k=>`<p class="mw ${m[k].word ? '' : 'story'}">${av(k,'sm')}<span>${esc(m[k].word || m[k].moment)}</span></p>`).join('');
+  const words = ['a','b'].filter(k=>m[k] && (m[k].word || m[k].moment)).map(k=>`<p class="mw ${m[k].word ? '' : 'story'}">${av(k,'sm')}<span>${escLines(m[k].word || m[k].moment)}</span></p>`).join('');
   const up = uploading.filter(u=>u.item===id).length;
   const where = cleanWhere(item);
   return `<article class="mem-card" data-open="${esc(id)}">

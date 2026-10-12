@@ -16,7 +16,9 @@ const SHELL = [
 const FONT_CACHE = 'ooit-fonts';
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache: 'reload' slaat de browsercache over, zodat een update meteen de
+  // nieuwe bestanden binnenhaalt en niet een bewaard exemplaar.
+  event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {
@@ -72,9 +74,11 @@ self.addEventListener('fetch', event => {
   // Supabase en andere domeinen: altijd via het netwerk.
   if (url.origin !== self.location.origin) return;
 
-  // Eigen bestanden: eerst netwerk, bij geen verbinding de cache.
+  // Eigen bestanden: eerst netwerk, bij geen verbinding de cache. 'no-cache'
+  // vraagt de server altijd of er een nieuwere versie is. GitHub Pages laat
+  // bestanden anders tien minuten bewaren.
   event.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-cache' })
       .then(res => {
         if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
         return res;
