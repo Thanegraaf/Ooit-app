@@ -1211,8 +1211,8 @@ function openEditor(id){
   const isCatalog = !!DATA.find(x=>x.id===id);
   const edited = e.edits && EDIT_KEYS.some(k=>e.edits[k]);
   const f = (k,label,rows,max) => rows
-    ? `<label class="field">${label}<textarea id="ed_${k}" rows="${rows}" maxlength="${max}">${esc(it[k]||'')}</textarea></label>`
-    : `<label class="field">${label}<input id="ed_${k}" maxlength="${max}" value="${esc(it[k]||'')}"></label>`;
+    ? `<label class="field">${label}<textarea id="ed_${k}" rows="${rows}">${esc(it[k]||'')}</textarea></label>`
+    : `<label class="field">${label}<input id="ed_${k}" value="${esc(it[k]||'')}"></label>`;
   editorEl.innerHTML = `<div class="grabber"></div>
     <div class="sheet-top"><button class="icon-btn" data-action="closeeditor" aria-label="Sluiten">${I.close}</button></div>
     <div class="sheet-scroll"><div class="form">
@@ -1290,14 +1290,8 @@ function openMemory(id, fresh){
       <div class="q">
         <h3>Wat wil je hierover kwijt?</h3>
         <p class="hint">Die ene seconde, die geur, die zin. Van één regel tot het hele verhaal.</p>
-        <textarea id="mMoment" rows="3" maxlength="600" placeholder="Toen we...">${esc(mine.moment||'')}</textarea>
+        <textarea id="mMoment" rows="4" placeholder="Toen we...">${esc(mine.moment||'')}</textarea>
         ${partnerNote(m,'moment')}
-      </div>
-      <div class="q">
-        <h3>Deze ervaring in een woord of zin</h3>
-        <p class="hint">Jullie zien straks allebei wat de ander opschreef.</p>
-        <input id="mWord" maxlength="90" placeholder="Bijvoorbeeld: ademloos" value="${esc(mine.word||'')}">
-        ${partnerNote(m,'word')}
       </div>
       <div class="q">
         <h3>Zou je het nog een keer doen?</h3>
@@ -1347,7 +1341,6 @@ function saveMemory(){
   const date = ($('#mDate')||{}).value || isoDate(e.lived || Date.now());
   const mine = {
     moment: (($('#mMoment')||{}).value||'').trim(),
-    word: (($('#mWord')||{}).value||'').trim(),
     again: memAgain
   };
   const patch = {memory:{date, [S.me]:mine}, updatedBy:S.me};
@@ -2509,12 +2502,13 @@ function buildSlides(y, items){
     }
   }});
 
-  const words = items.filter(x=>{ const m = x.e.memory || {}; return (m.a && m.a.word) || (m.b && m.b.word); })
-    .sort((a,b)=>{ const f = x=>{ const m = x.e.memory; return (m.a && m.a.word ? 1 : 0) + (m.b && m.b.word ? 1 : 0); }; return f(b)-f(a); }).slice(0, 4);
-  if(words.length) slides.push({alt:'In een woord of zin', draw: async ctx=>{
+  const said = v => v && (v.word || v.moment);
+  const words = items.filter(x=>{ const m = x.e.memory || {}; return said(m.a) || said(m.b); })
+    .sort((a,b)=>{ const f = x=>{ const m = x.e.memory; return (said(m.a) ? 1 : 0) + (said(m.b) ? 1 : 0); }; return f(b)-f(a); }).slice(0, 4);
+  if(words.length) slides.push({alt:'In jullie woorden', draw: async ctx=>{
     wrBg(ctx, '#1D2233', '#0B0D13', 'rgba(63,99,181,.2)', 400);
     wrFrame(ctx, y);
-    wrText(ctx, 'In een woord of zin', WR_W/2, 290, {size:80, fam:'d', align:'center'});
+    wrText(ctx, 'In jullie woorden', WR_W/2, 290, {size:80, fam:'d', align:'center'});
     wrText(ctx, 'Wat jullie opschreven, naast elkaar.', WR_W/2, 370, {size:38, align:'center', color:WC.muted});
     let yy = 520;
     const per = Math.min(330, (1680 - yy) / words.length);
@@ -2525,7 +2519,7 @@ function buildSlides(y, items){
       ['a','b'].forEach((k, i)=>{
         const cx = 100 + i*(colW+40);
         wrAvatar(ctx, k, cx+26, yy+62, 26);
-        const w = m[k] && m[k].word;
+        const w = m[k] && (m[k].word || m[k].moment);
         wrText(ctx, w ? w : 'Nog niets ingevuld', cx+70, yy+78, {size: w ? (w.length > 26 ? 38 : 50) : 32, fam: w ? 'd' : 'u', color: w ? WC.ink : WC.muted, maxW:colW-70, maxLines: per > 280 ? 4 : 3, lh:1.12});
       });
       yy += per;
@@ -2909,7 +2903,7 @@ function memCard({id, e, item}){
   const photos = livePhotos(e).filter(p=>photoPath(e, p));
   const m = e.memory || {};
   const d = new Date(livedDate(e));
-  const words = ['a','b'].filter(k=>m[k] && m[k].word).map(k=>`<p class="mw">${av(k,'sm')}<span>${esc(m[k].word)}</span></p>`).join('');
+  const words = ['a','b'].filter(k=>m[k] && (m[k].word || m[k].moment)).map(k=>`<p class="mw ${m[k].word ? '' : 'story'}">${av(k,'sm')}<span>${esc(m[k].word || m[k].moment)}</span></p>`).join('');
   const up = uploading.filter(u=>u.item===id).length;
   const where = cleanWhere(item);
   return `<article class="mem-card" data-open="${esc(id)}">
@@ -3033,14 +3027,13 @@ function openNewMemory(){
       <h2 id="edTitle">Herinnering toevoegen</h2>
       <p class="sub">Iets wat jullie deden. Het hoeft niet op de lijst te hebben gestaan.</p>
       <div class="q"><h3>Foto's</h3><p class="hint">Kies eerst je foto's. Staan de datum en plek erin, dan vult de app die zelf in.</p><div id="nmPhotos"></div></div>
-      <label class="field">Wat deden jullie?<input id="nm_title" maxlength="90" placeholder="Bijvoorbeeld: pizza eten in Napels"></label>
+      <label class="field">Wat deden jullie?<input id="nm_title" placeholder="Bijvoorbeeld: pizza eten in Napels"></label>
       <label class="field">Wanneer<input type="date" id="nm_date" value="${t}" max="${t}"></label>
-      <label class="field">Waar<input id="nm_where" maxlength="80" placeholder="Bijvoorbeeld: Napels"></label>
+      <label class="field">Waar<input id="nm_where" placeholder="Bijvoorbeeld: Napels"></label>
       <div class="field">Plek op de kaart<div id="nmPlace"></div></div>
       <div class="field">Van wie<div class="opt-chips">${chips('nmwho', [['both','Samen'], [S.me, 'Van mij'], [other(S.me), 'Van '+nm(other(S.me))]], 'both')}</div></div>
       <div class="field">Soort<div class="opt-chips">${chips('nmcat', CATS.map(c=>[c.id, c.short, c.color]), 'eigen')}</div></div>
-      <label class="field">Wat wil je erover kwijt?<textarea id="nm_moment" rows="3" maxlength="600" placeholder="Toen we..."></textarea></label>
-      <label class="field">In een woord of zin<input id="nm_word" maxlength="90" placeholder="Bijvoorbeeld: ademloos"></label>
+      <label class="field">Wat wil je erover kwijt?<textarea id="nm_moment" rows="4" placeholder="Toen we..."></textarea></label>
       <p class="who-err" id="nmErr" hidden></p>
     </div></div>
     <div class="sheet-cta"><button class="btn soft" data-action="closenewmemory">Annuleren</button><button class="btn primary" data-action="savenewmemory">Bewaren</button></div>`;
@@ -3094,10 +3087,10 @@ function saveNewMemory(){
   const custom = {kind:'memory', title, where: val('where'), cat: newMem.cat,
     motif: OWN_MOTIFS[Math.floor(r()*OWN_MOTIFS.length)], pal: PAL_KEYS[Math.floor(r()*PAL_KEYS.length)]};
   const who = newMem.who;
-  const mine = {moment: val('moment'), word: val('word'), again: null};
+  const mine = {moment: val('moment'), again: null};
   const body = {for: who, addedBy:S.me, addedAt:Date.now(), lived: Math.min(fromIso(date), Date.now()),
     wants: who==='both' ? {a:true, b:true} : {}, updatedBy:S.me, custom, memory:{date}};
-  if(mine.moment || mine.word) body.memory[S.me] = mine;
+  if(mine.moment) body.memory[S.me] = mine;
   if(newMem.ll) body.place = newMem.ll;
   const files = newMem.files.slice();
   closeNewMemory();
