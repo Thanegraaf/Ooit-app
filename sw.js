@@ -9,9 +9,9 @@ const SHELL = [
   './config.js',
   './manifest.webmanifest',
   './vendor/supabase-2.116.0.js',
-  './icons/apple-touch-icon.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/apple-touch-icon-v2.png',
+  './icons/icon-192-v2.png',
+  './icons/icon-512-v2.png'
 ];
 const FONT_CACHE = 'ooit-fonts';
 
@@ -37,8 +37,8 @@ self.addEventListener('push', event => {
   event.waitUntil(self.registration.showNotification(d.title, {
     body: d.body,
     tag: d.tag || 'ooit',
-    icon: './icons/icon-192.png',
-    badge: './icons/icon-192.png',
+    icon: './icons/icon-192-v2.png',
+    badge: './icons/icon-192-v2.png',
     data: { url: './' }
   }));
 });
