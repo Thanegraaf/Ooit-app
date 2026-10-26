@@ -1,4 +1,4 @@
-// Service worker voor Ooit.
+// Service worker voor Wij twee.
 // Verhoog VERSION bij elke update, dan halen telefoons de nieuwe bestanden op.
 const VERSION = 'ooit-v1';
 const SHELL = [
@@ -31,7 +31,7 @@ self.addEventListener('activate', event => {
 
 // Meldingen: de GitHub-taak stuurt hier een bericht naartoe.
 self.addEventListener('push', event => {
-  let d = { title: 'Ooit', body: '', tag: 'ooit' };
+  let d = { title: 'Wij twee', body: '', tag: 'ooit' };
   try { d = Object.assign(d, event.data ? event.data.json() : {}); }
   catch (e) { if (event.data) d.body = event.data.text(); }
   event.waitUntil(self.registration.showNotification(d.title, {

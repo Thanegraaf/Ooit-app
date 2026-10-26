@@ -1,4 +1,4 @@
-# Ooit, onze gedeelde bucketlist
+# Wij twee
 
 Een web-app voor jullie twee. Eén gedeelde lijst met ervaringen, live bijgewerkt, met herinneringen en foto's. De app draait op Supabase en staat als app op het beginscherm van je iPhone.
 
@@ -15,7 +15,7 @@ Een web-app voor jullie twee. Eén gedeelde lijst met ervaringen, live bijgewerk
 | Supabase wakker houden (`.github/workflows/keepalive.yml`) | Elke dag om 05:17 UTC |
 | Meldingen op je telefoon (`supabase/push.sql`, `.github/workflows/notify.yml`) | Klaar om aan te zetten, zie stap 8 |
 | Eigen kaarten en swipen (`supabase/swipe-en-kaarten.sql`) | Klaar om te plakken, zie stap 9 |
-| Herinneringen, Gepland, Kaart, Ooit Wrapped, jaardag en fotoboek | Werken zonder extra stappen |
+| Herinneringen, Gepland, Kaart, Wrapped, jaardag en fotoboek | Werken zonder extra stappen |
 
 Je hoeft `config.js` en `sw.js` dus niet meer met de hand aan te passen.
 
@@ -186,13 +186,13 @@ De app draait om drie fases. Elke ervaring staat in een ervan.
 | Gepland | Alles met een datum, de eerstvolgende bovenaan. Je krijgt een melding de dag ervoor, en de dag erna de vraag hoe het was. Met "Zet in agenda" zet je het in de agenda van je telefoon. |
 | Ooit | Onze lijst en Ideeën opdoen. Bij een ervaring tik je op "Plan dit" om een datum te kiezen. Swipen, dobbelen en eigen kaarten zitten hier. |
 
-Ooit Wrapped verschijnt vanaf 1 december bovenaan Herinneringen. Oudere jaren staan onderaan die pagina. Wil je het nu al zien, open dan de app met `?wrapped=2026` achter de link, bijvoorbeeld `https://thanegraaf.github.io/Ooit-app/?wrapped=2026`. Dat werkt in een browser waarin je bent ingelogd.
+Wij twee Wrapped verschijnt vanaf 1 december bovenaan Herinneringen. Oudere jaren staan onderaan die pagina. Wil je het nu al zien, open dan de app met `?wrapped=2026` achter de link, bijvoorbeeld `https://thanegraaf.github.io/Ooit-app/?wrapped=2026`. Dat werkt in een browser waarin je bent ingelogd.
 
 Elk jaar op jullie jaardag, 15 september, verschijnt een pop-up met hoeveel jaar jullie samen zijn, hoeveel herinneringen jullie dat jaar maakten en een paar foto's. Open je de app pas later die week, dan zie je hem alsnog. Je ziet hem één keer per jaar per telefoon. Om 9:00 krijgen jullie allebei een melding. De datum staat in `app.js` als `TOGETHER_DEFAULT`, dus ook hiervoor hoef je niets in Supabase te doen.
 
 Bij elk jaar op Herinneringen staat de knop **Fotoboek**. Die maakt een pdf op A4 met een voorkant, een pagina per herinnering met foto's en jullie verhalen, en een achterkant. Lange verhalen lopen door op een volgende pagina. Je bewaart de pdf, stuurt hem door of laat hem drukken. Het maken gebeurt op je telefoon met jsPDF (`vendor/jspdf-4.2.1.min.js`, MIT-licentie).
 
-Het app-icoon bestaat uit twee overlappende cirkels. Op iOS blijft het oude icoon staan tot je de app van je beginscherm haalt en via Safari opnieuw toevoegt. Daarna log je opnieuw in.
+De app heet Wij twee. Het app-icoon bestaat uit twee overlappende cirkels. Het tabblad Ooit houdt zijn naam, daar staat wat jullie ooit nog willen. Op iOS blijft het oude icoon staan tot je de app van je beginscherm haalt en via Safari opnieuw toevoegt. Daarna log je opnieuw in.
 
 Voor deze opzet hoef je niets in Supabase te veranderen. Alles wat al beleefd was, staat automatisch bij Herinneringen.
 
@@ -231,7 +231,7 @@ Zie je "De database mist nog een onderdeel", voer dan stap 9 uit. Zie je een eig
 3. Kijk onder **Actions** bij **Meldingen versturen** naar de laatste run. Staat er `Deze secrets ontbreken nog`, dan mist er een secret uit stap 8c.
 4. Staat er `PUSH_SECRET klopt niet`, dan verschilt het secret op GitHub van de waarde in `push_config`. Voer `supabase/push.sql` opnieuw uit met het juiste wachtwoord.
 5. Staat in de deploy-log `VAPID-sleutel ingevuld: false`, dan mist `VAPID_PUBLIC_KEY`. Vul hem aan en rol opnieuw uit.
-6. Controleer bij Instellingen, Ooit, Berichtgeving of iOS de meldingen niet blokkeert.
+6. Controleer bij Instellingen, Wij twee, Berichtgeving of iOS de meldingen niet blokkeert.
 
 ## Kosten en grenzen
 

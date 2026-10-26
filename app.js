@@ -429,7 +429,7 @@ async function pushOn(){
   let perm = Notification.permission;
   if(perm === 'default') perm = await Notification.requestPermission();
   if(perm !== 'granted'){
-    toast('Meldingen staan uit. Zet ze aan bij Instellingen, Ooit, Berichtgeving.');
+    toast('Meldingen staan uit. Zet ze aan bij Instellingen, Wij twee, Berichtgeving.');
     return false;
   }
   try{
@@ -1554,7 +1554,7 @@ async function renderPushRow(){
     return;
   }
   if(Notification.permission === 'denied'){
-    box.innerHTML = `<p class="push-note">Meldingen zijn geblokkeerd. Zet ze aan bij Instellingen, Ooit, Berichtgeving.</p>`;
+    box.innerHTML = `<p class="push-note">Meldingen zijn geblokkeerd. Zet ze aan bij Instellingen, Wij twee, Berichtgeving.</p>`;
     return;
   }
   // Eerst tekenen, dan pas navragen of dit apparaat al aangemeld is. Zo staat
@@ -2280,7 +2280,7 @@ function deleteCard(btn){
   });
 }
 
-/* ---------- Ooit Wrapped ---------- */
+/* ---------- Wij twee Wrapped ---------- */
 // Een jaaroverzicht in schermen, zoals een Instagram-story. Elk scherm is
 // een getekende afbeelding van 1080 bij 1920. Wat je ziet, bewaar je ook.
 const WR_W = 1080, WR_H = 1920, WR_MS = 7000;
@@ -2310,11 +2310,11 @@ function wrappedYears(){
 function wrappedBanner(){
   const y = wrappedNowYear();
   if(!y || !livedIn(y).length) return '';
-  return `<button class="wr-banner" data-wrapped="${y}"><span class="wr-b-year">${y}</span><span class="wr-b-text"><small>Ooit Wrapped</small><strong>Jullie ${y} staat klaar</strong></span><span class="wr-b-go">Bekijk</span></button>`;
+  return `<button class="wr-banner" data-wrapped="${y}"><span class="wr-b-year">${y}</span><span class="wr-b-text"><small>Wij twee Wrapped</small><strong>Jullie ${y} staat klaar</strong></span><span class="wr-b-go">Bekijk</span></button>`;
 }
 function wrappedArchive(){
   const ys = wrappedYears(); if(!ys.length) return '';
-  return `<div class="wr-archive"><h2>Jaaroverzichten</h2><div class="wr-years">${ys.map(y=>`<button class="chip" data-wrapped="${y}">Ooit ${y}</button>`).join('')}</div></div>`;
+  return `<div class="wr-archive"><h2>Jaaroverzichten</h2><div class="wr-years">${ys.map(y=>`<button class="chip" data-wrapped="${y}">Wrapped ${y}</button>`).join('')}</div></div>`;
 }
 // Zet in de loop van het jaar alvast een melding klaar voor 1 december.
 function scheduleWrappedPush(){
@@ -2323,7 +2323,7 @@ function scheduleWrappedPush(){
   if(Date.now() >= at || !livedIn(y).length) return;
   const key = 'ooit-wrapped-push-'+y;
   if(lsGet(key)) return;
-  ['a','b'].forEach(k=>notify(`Jullie ${y} staat klaar`, 'Ooit Wrapped: kijk terug op wat jullie dit jaar beleefden.', {slot:k, tag:'wrapped-'+y, dedupe:`wrapped:${y}:${k}`, at}));
+  ['a','b'].forEach(k=>notify(`Jullie ${y} staat klaar`, 'Wij twee Wrapped: kijk terug op wat jullie dit jaar beleefden.', {slot:k, tag:'wrapped-'+y, dedupe:`wrapped:${y}:${k}`, at}));
   lsSet(key, '1');
 }
 function afterFirstLoad(){
@@ -2394,9 +2394,9 @@ function wrBg(ctx, top, bottom, glow, gy){
 }
 function wrFrame(ctx, y){
   wrFont(ctx, 28, 'u', 700); ctx.fillStyle = WC.muted; ctx.textAlign = 'center';
-  ctx.fillText(`OOIT WRAPPED  ·  ${y}`, WR_W/2, 128);
+  ctx.fillText(`WIJ TWEE WRAPPED  ·  ${y}`, WR_W/2, 128);
   wrFont(ctx, 46, 'd'); ctx.fillStyle = 'rgba(244,241,234,.5)';
-  ctx.fillText('Ooit', WR_W/2, WR_H-86);
+  ctx.fillText('Wij twee', WR_W/2, WR_H-86);
 }
 function wrAvatar(ctx, k, x, y, r){
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = WC[k]; ctx.fill();
@@ -2465,7 +2465,7 @@ async function wrFonts(){
 function buildSlides(y, items){
   const slides = [];
   const oa = other('a');
-  slides.push({alt:`Ooit Wrapped ${y}`, draw: async ctx=>{
+  slides.push({alt:`Wij twee Wrapped ${y}`, draw: async ctx=>{
     wrBg(ctx, '#2B3350', '#0E1016', 'rgba(240,180,78,.26)', 640);
     wrFrame(ctx, y);
     wrAvatar(ctx, 'a', WR_W/2 - 78, 640, 128);
@@ -2741,12 +2741,12 @@ function wrStep(d){
 }
 function wrSave(){
   if(!wr || !wr.res || !wr.res.blob) return;
-  const name = `ooit-${wr.year}-${wr.i+1}.jpg`;
+  const name = `wij-twee-${wr.year}-${wr.i+1}.jpg`;
   const file = new File([wr.res.blob], name, {type:'image/jpeg'});
   wr.paused = true;
   const resume = ()=>{ if(wr) wr.paused = false; };
   if(navigator.canShare && navigator.share && navigator.canShare({files:[file]})){
-    navigator.share({files:[file], title:`Ooit ${wr.year}`}).then(resume, err=>{
+    navigator.share({files:[file], title:`Wij twee ${wr.year}`}).then(resume, err=>{
       resume();
       if(err && err.name !== 'AbortError') toast('Delen lukte niet. Houd je vinger op de afbeelding om hem te bewaren.');
     });
@@ -2884,9 +2884,9 @@ function icsText(id){
   const endExcl = isoDate(fromIso(p.end || p.start) + 86400000);
   const x = s=>String(s||'').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1');
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
-  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Ooit//NL', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Wij twee//NL', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
     `UID:${id}-${p.start}@ooit`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${d(p.start)}`, `DTEND;VALUE=DATE:${d(endExcl)}`,
-    `SUMMARY:${x(it.title)}`, cleanWhere(it) ? `LOCATION:${x(cleanWhere(it))}` : '', `DESCRIPTION:${x('Gepland in Ooit.')}`,
+    `SUMMARY:${x(it.title)}`, cleanWhere(it) ? `LOCATION:${x(cleanWhere(it))}` : '', `DESCRIPTION:${x('Gepland in Wij twee.')}`,
     'BEGIN:VALARM', 'TRIGGER:-PT15H', 'ACTION:DISPLAY', `DESCRIPTION:${x(it.title)}`, 'END:VALARM',
     'END:VEVENT', 'END:VCALENDAR'].filter(Boolean).join('\r\n');
 }
@@ -2953,7 +2953,7 @@ function statusBanner(){
     : S.mode==='broken' ? `<div class="banner">Jullie gegevens zijn nu niet bereikbaar. Controleer je internet. Is het Supabase-project gepauzeerd, herstel het dan in het Supabase-dashboard.</div><div style="padding:10px 20px 0"><button class="btn soft small" data-action="retry">Opnieuw proberen</button></div>` : '';
 }
 function renderMemories(){
-  let h = `<div class="largetitle home-head"><h1>Ooit</h1><p>Wat we deden, wat we plannen en wat we ooit nog willen.</p></div>`;
+  let h = `<div class="largetitle home-head"><h1>Wij twee</h1><p>Wat we deden, wat we plannen en wat we ooit nog willen.</p></div>`;
   if(!S.listReady){ memContent.innerHTML = h + `<div class="loading">Jullie herinneringen worden geladen</div>`; return; }
   h += statusBanner();
   h += wrappedBanner();
@@ -3244,7 +3244,7 @@ function scheduleTogetherPush(){
   if(at.getTime() <= Date.now() || at.getTime() - Date.now() > 45*dayMs) return;
   const key = `ooit-jaardag-${togetherIso()}-${isoDate(m.at)}`;
   if(lsGet(key)) return;
-  const body = `Open Ooit en kijk terug op ${m.n===1 ? 'jullie eerste jaar' : 'het afgelopen jaar'}.`;
+  const body = `Open Wij twee en kijk terug op ${m.n===1 ? 'jullie eerste jaar' : 'het afgelopen jaar'}.`;
   ['a','b'].forEach(k=>notify(`Vandaag ${yearsLabel(m.n)} samen`, body, {slot:k, tag:'jaardag', dedupe:`jaardag:${togetherIso()}:${isoDate(m.at)}:${k}`, at:at.getTime()}));
   lsSet(key, '1');
 }
@@ -3273,7 +3273,7 @@ function bkPage(){
 }
 function bkFooter(ctx, y, n){
   wrFont(ctx, 22, 'u', 600); ctx.fillStyle = BK.muted; ctx.textAlign = 'center';
-  ctx.fillText(`Ooit  ·  ${y}  ·  ${n}`, BK.W/2, BK.H - 60);
+  ctx.fillText(`Wij twee  ·  ${y}  ·  ${n}`, BK.W/2, BK.H - 60);
 }
 async function bkPhotos(ctx, list, x, y, w, h){
   const urls = await wrPhotoUrls(list.map(p=>p.path));
@@ -3307,7 +3307,7 @@ async function buildBook(y, onPage, opt){
     const cover = items.map(x=>({x, n:livePhotos(x.e).filter(p=>photoPath(x.e, p)).length})).sort((a,b)=>b.n-a.n)[0];
     if(cover && cover.n){ await bkPhotos(ctx, [{path:firstPhoto(cover.x.e)}], BK.M, 470, BK.W-2*BK.M, 860); }
     else if(items[0]) await wrArt(ctx, items[0].item, BK.M, 470, BK.W-2*BK.M, 860, 18, opt);
-    wrFont(ctx, 30, 'u', 700); ctx.fillStyle = BK.gold; ctx.textAlign = 'center'; ctx.fillText('OOIT', BK.W/2, 200);
+    wrFont(ctx, 30, 'u', 700); ctx.fillStyle = BK.gold; ctx.textAlign = 'center'; ctx.fillText('WIJ TWEE', BK.W/2, 200);
     wrText(ctx, String(y), BK.W/2, 370, {size:190, fam:'d', align:'center', color:BK.ink});
     wrText(ctx, `${nm('a')} en ${nm('b')}`, BK.W/2, 1450, {size:64, fam:'d', align:'center', color:BK.ink, maxW:BK.W-2*BK.M, maxLines:2});
     wrText(ctx, items.length===1 ? '1 herinnering' : `${items.length} herinneringen`, BK.W/2, 1530, {size:34, align:'center', color:BK.muted});
@@ -3366,7 +3366,7 @@ async function buildBook(y, onPage, opt){
   {
     const pg = bkPage(), ctx = pg.ctx;
     wrText(ctx, 'Wordt vervolgd', BK.W/2, BK.H/2, {size:80, fam:'d', align:'center', color:BK.ink});
-    wrText(ctx, `Ooit, ${y}`, BK.W/2, BK.H/2 + 80, {size:32, align:'center', color:BK.muted});
+    wrText(ctx, `Wij twee, ${y}`, BK.W/2, BK.H/2 + 80, {size:32, align:'center', color:BK.muted});
     await push(pg, true);
   }
   return pages;
@@ -3418,10 +3418,10 @@ async function openBook(y){
 }
 function saveBook(){
   if(!book || !book.blob) return;
-  const name = `ooit-fotoboek-${book.year}.pdf`;
+  const name = `wij-twee-fotoboek-${book.year}.pdf`;
   const file = new File([book.blob], name, {type:'application/pdf'});
   if(navigator.canShare && navigator.share && navigator.canShare({files:[file]})){
-    navigator.share({files:[file], title:`Ooit ${book.year}`}).catch(err=>{ if(err && err.name !== 'AbortError') toast('Delen lukte niet. Probeer het opnieuw.'); });
+    navigator.share({files:[file], title:`Wij twee ${book.year}`}).catch(err=>{ if(err && err.name !== 'AbortError') toast('Delen lukte niet. Probeer het opnieuw.'); });
     return;
   }
   const a = document.createElement('a'); a.href = book.url; a.download = name;
